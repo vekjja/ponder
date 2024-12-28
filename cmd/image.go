@@ -25,8 +25,12 @@ var imageCmd = &cobra.Command{
 	Use:   "image",
 	Short: "Generate an image from a prompt",
 	Long:  ``,
+	Args: func(cmd *cobra.Command, args []string) error {
+		return checkArgs(args)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		createImage(prompt, imageFile)
+
 	},
 }
 
@@ -41,6 +45,8 @@ func init() {
 func createImage(prompt, imageFile string) {
 	fmt.Println("🖼  Creating Image...")
 	res := ai.ImageGen(prompt, imageFile, n)
+
+	fmt.Println("URLs:" + res.Data[0].URL)
 
 	for imgNum, data := range res.Data {
 		url := data.URL

@@ -22,28 +22,32 @@ var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
-	Args:  cobra.ExactArgs(1), // Expect exactly one argument
+	Args: func(cmd *cobra.Command, args []string) error {
+		return checkArgs(args)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		prompt := args[0]
+
 		var err error
 		if convo {
 			for {
-				response, audio := chatResponse(prompt)
+				response, _ := chatResponse(prompt)
+				// response, audio := chatResponse(prompt)
 				fmt.Println("\nPonder:")
 				syntaxHighlight(response)
-				if narrate {
-					playAudio(audio)
-				}
+				// if narrate {
+				// 	playAudio(audio)
+				// }
 				fmt.Print("\nYou:\n  ")
 				prompt, err = getUserInput()
 				catchErr(err, "warn")
 			}
 		} else {
-			response, audio := chatResponse(prompt)
+			response, _ := chatResponse(prompt)
+			// response, audio := chatResponse(prompt)
 			syntaxHighlight(response)
-			if narrate {
-				playAudio(audio)
-			}
+			// if narrate {
+			// 	playAudio(audio)
+			// }
 		}
 	},
 }
@@ -68,7 +72,7 @@ func chatCompletion(prompt string) string {
 
 	// Send the messages to OpenAI
 	res, err := ai.ChatCompletion(ponderMessages)
-	catchErr(err)
+	catchErr(err, "fatal")
 	ponderMessages = append(ponderMessages, goai.Message{
 		Role:    "assistant",
 		Content: res.Choices[0].Message.Content,
