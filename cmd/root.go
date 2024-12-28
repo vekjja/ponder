@@ -15,7 +15,7 @@ import (
 )
 
 var ponderMessages = []goai.Message{}
-var APP_VERSION = "v0.1.0"
+var APP_VERSION = "v0.4.3"
 var ai *goai.Client
 
 var verbose,
@@ -24,7 +24,9 @@ var verbose,
 
 var prompt,
 	configFile,
-	OPENAI_API_KEY string
+	OPENAI_API_KEY,
+	DISCORD_API_KEY,
+	PRINTIFY_API_KEY string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -39,15 +41,7 @@ var rootCmd = &cobra.Command{
   Or whatever else you can think of. 🤔
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if convo && len(args) == 0 {
-			// When --convo is used, no args are required
-			return nil
-		}
-		// Otherwise, exactly one arg must be provided
-		if len(args) != 1 {
-			return fmt.Errorf("Prompt Required")
-		}
-		return nil
+		return checkArgs(args)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var prompt string
@@ -57,6 +51,19 @@ var rootCmd = &cobra.Command{
 		// Assuming chatCmd can handle this
 		chatCmd.Run(cmd, []string{prompt})
 	},
+}
+
+func checkArgs(args []string) error {
+	if convo && len(args) == 0 {
+		// When --convo is used, no args are required
+		return nil
+	}
+	// Otherwise, exactly one arg must be provided
+	if len(args) != 1 {
+		return fmt.Errorf("Prompt Required")
+	}
+	prompt = args[0]
+	return nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -76,13 +83,23 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 	rootCmd.PersistentFlags().BoolVarP(&convo, "convo", "c", false, "Conversational Style chat")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().BoolVarP(&narrate, "narrate", "n", false, "Narrate the response using TTS and the default audio output")
-	rootCmd.PersistentFlags().StringVar(&voice, "voice", "onyx", "Voice to use: alloy, echo, fable, onyx, nova, and shimmer")
+	rootCmd.PersistentFlags().BoolVar(&narrate, "narrate", false, "Narrate the response using TTS and the default audio output")
+	rootCmd.PersistentFlags().StringVar(&voice, "voice", "onyx", "Voice to use: alloy, ash, coral, echo, fable, onyx, nova, sage and shimmer")
 
 	// Check for Required Environment Variables
 	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
 	if OPENAI_API_KEY == "" && verbose {
 		fmt.Println("⚠️ OPENAI_API_KEY environment variable is not set, continuing without OpenAI API Key")
+	}
+
+	DISCORD_API_KEY = os.Getenv("DISCORD_API_KEY")
+	if DISCORD_API_KEY == "" && verbose {
+		fmt.Println("⚠️ DISCORD_API_KEY environment variable is not set, continuing without Discord API Key")
+	}
+
+	PRINTIFY_API_KEY = os.Getenv("PRINTIFY_API_KEY")
+	if PRINTIFY_API_KEY == "" && verbose {
+		fmt.Println("⚠️ PRINTIFY_API_KEY environment variable is not set, continuing without Printify API Key")
 	}
 }
 
@@ -115,6 +132,8 @@ func viperConfig() {
 
 	viper.SetDefault("radio_notificationSound", "~/.ponder/audio/notify.mp3")
 
+	viper.SetDefault("printify_endpoint", "https://api.printify.com/v1/")
+
 	viper.SetConfigName("config")        // name of config file (without extension)
 	viper.SetConfigType("yaml")          // REQUIRED the config file does not have an extension
 	viper.AddConfigPath(".")             // look for config in the working directory
@@ -141,7 +160,7 @@ func viperConfig() {
 	}
 
 	ponderMessages = []goai.Message{{
-		Role:    "system",
+		Role:    "developer",
 		Content: viper.GetString("openAI_chat_systemMessage"),
 	}}
 

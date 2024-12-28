@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"log"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/seemywingz/goai"
@@ -16,7 +18,9 @@ func initDiscord() {
 	discord, err = discordgo.New("Bot " + DISCORD_API_KEY)
 	catchErr(err)
 
-	discord.Client = httpClient // Set the HTTP client for the Discord session.
+	discord.Client = &http.Client{
+		Timeout: time.Second * 10,
+	}
 
 	// Open a websocket connection to Discord
 	err = discord.Open()
@@ -73,10 +77,6 @@ func registerCommands() {
 
 	commands := []*discordgo.ApplicationCommand{
 		{
-			Name:        "scrape",
-			Description: "Scrape Discord channel for Upscaled Midjourney Images",
-		},
-		{
 			Name:        "ponder-image",
 			Description: "Use DALL-E 3 to generate an Image",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -100,8 +100,6 @@ func registerCommands() {
 func handleCommands(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	discordInitialResponse("Pondering...", s, i)
 	switch i.ApplicationCommandData().Name {
-	case "scrape":
-		discordScrapeImages(s, i)
 	case "ponder-image":
 		discordPonderImage(s, i)
 	default: // Handle unknown slash commands
@@ -159,7 +157,7 @@ func discordOpenAIResponse(s *discordgo.Session, m *discordgo.MessageCreate, men
 	}
 
 	// Send the messages to OpenAI
-	ai.User = ai.User + m.Author.Username
+	ai.User = "discord" + s.State.User.Username
 	oaiResponse, err := ai.ChatCompletion(openaiMessages)
 	catchErr(err)
 	s.ChannelMessageSend(m.ChannelID, oaiResponse.Choices[0].Message.Content)
@@ -179,28 +177,6 @@ func discordPonderImage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		s.ChannelMessageSend(channelID, res.Data[0].URL)
 	} else {
 		discordFollowUp("Please Provide a Prompt for Image Generation", s, i)
-	}
-
-}
-
-func discordScrapeImages(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// Get the interaction channel ID
-	channelID := i.ChannelID
-	discord.ChannelTyping(channelID)
-	messages, err := discord.ChannelMessages(channelID, 100, "", "", "")
-	catchErr(err)
-	discordFollowUp("Scraping Discord Channel for ALL Image URLs and sending them to #saved-images.\nAll `Upscaled` Midjourney Images will be sent to Printify as well...", s, i)
-
-	savedImagesChannelID := discordGetChannelID(s, i.GuildID, "saved-images")
-
-	for _, v := range messages {
-		if len(v.Attachments) > 0 {
-			url := v.Attachments[0].URL
-			s.ChannelMessageSend(savedImagesChannelID, url)
-			if strings.Contains(v.Content, "Upscaled") {
-				printify_UploadImage(fileNameFromURL(url), url)
-			}
-		}
 	}
 
 }

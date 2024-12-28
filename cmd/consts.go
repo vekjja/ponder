@@ -1,6 +1,6 @@
 package cmd
 
-const APP_VERSION = "v0.3.0"
+// const APP_VERSION = "v0.3.0"
 const printify_endpoint = "https://api.printify.com/v1/"
 
 const ponder_SystemMessage = `You are Ponder.Welcome to Ponder! 
