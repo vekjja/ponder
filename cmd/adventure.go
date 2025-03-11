@@ -143,13 +143,17 @@ func adventureImage(prompt string) {
 }
 
 func narratorSay(text string) {
+	fmt.Println()
 	if narrate {
 		// audioData := tts(text)
 		spinner.Stop()
 		fmt.Println("🗣️  Narrator: ", text)
 		// playAudio(audioData)
+	} else {
+
+		fmt.Println("🗣️  Narrator: ", text)
+		spinner.Stop()
 	}
-	spinner.Stop()
 }
 
 func getPlayerInput(player *Character) string {
@@ -188,7 +192,7 @@ func startAdventure() {
 		Hunger:      0,
 	}
 
-	spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
+	// spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
 	narratorSay("Welcome " + player.Name + ", to the world of adventure! Describe your character, be as detailed as you like.")
 	playerDescription := getPlayerInput(&player)
 	player.Description = playerDescription
