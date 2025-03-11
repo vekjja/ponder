@@ -1,3 +1,4 @@
 .github/
 helm/
 files/
+go.work*

@@ -1,7 +1,7 @@
 Ponder
 -------
 ###### OpenAI Powered Chat Tool    
-[![main](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml/badge.svg?branch=main)](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml)
+[![main](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml/badge.svg?branch=v0.4.2)](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml)
 
 
 # Install
@@ -20,26 +20,26 @@ Visit your [API Keys](https://platform.openai.com/account/api-keys) page to retr
 ###### ℹ️ You can omit keys for unused API endpoints
 ```bash
 OPENAI_API_KEY={YOUR OPENAI API KEY}
-PRINTIFY_API_KEY={YOUR PRINTIFY API KEY}
 DISCORD_API_KEY={YOUR DISCORD BOT API KEY}
-DISCORD_PUB_KEY={YOUR DISCORD BOT PUB KEY}
 ```
-
-
 
 ## Ponder a single thought
 ### CLI
 ```bash
-ponder --prompt "AI is Amazing"
+ponder "What is AI"
 ```
 ### Docker
 #### Running ponder in docker is exactly the same, but you have to provide the env vars when running
 ```bash
-docker run -e OPENAI_API_KEY=$OPENAI_API_KEY  ghcr.io/seemywingz/ponder:latest --prompt "Ai is Amazing"
+docker run -e OPENAI_API_KEY=$OPENAI_API_KEY  ghcr.io/seemywingz/ponder:latest "What is AI"
+```
+or
+```bash
+docker run -e OPENAI_API_KEY=$OPENAI_API_KEY -e DISCORD_API_KEY=$DISCORD_API_KEY ghcr.io/seemywingz/ponder:latest discord-bot
 ```
 #### Example Output
 ```bash
-AI is indeed amazing. It has the potential to revolutionize many industries, from healthcare to transportation. AI can help automate mundane tasks, allowing humans to focus on more complex and creative tasks. AI can also be used to analyze large amounts of data quickly and accurately, helping to make better decisions. AI can also be used to create personalized experiences for customers, making them feel more connected to a company or product.
+AI, or Artificial Intelligence, refers to the simulation of human intelligence processes by machines, especially computer systems. These processes include learning (the acquisition of information and rules for using the information), reasoning (using the rules to reach approximate or definite conclusions), and self-correction.
 ```
 
 ## A small chat
@@ -48,22 +48,19 @@ ponder --convo
 ```
 #### Example Ouput
 ```bash
-You: 
-Hello, Ponder
+Ponder:
+    Hello! How can I assist you today?
 
-Ponder: 
-Hello there! How can I help you?
+You:
+  You are so helpful
 
-You: 
-you already have thank you
-
-Ponder: 
-Thank you for your kind words!
+Ponder:
+    Thank you for your kind words! I'm here to help. If you have any questions or need assistance with something, feel free to ask.
 ```
 
 ## Image Generation
 ```bash
-ponder image -p "a ferocious cat with wings and fire"
+ponder image "a ferocious cat with wings and fire"
 ```
 #### Example Ouput
 ```bash
@@ -73,13 +70,13 @@ ponder image -p "a ferocious cat with wings and fire"
 
 ### You can always refer to the `--help` menu as well.
 ```yaml
+
         Ponder
         GitHub: https://github.com/seemywingz/ponder
-        App Version: v0.3.0
+        App Version: v0.4.2
 
   Ponder uses OpenAI's API to generate text responses to user input.
-  You can use Ponder as a Discord chat bot or to generate images using the DALL-E API.
-  Or whatever else you can think of...
+  Or whatever else you can think of. 🤔
 
 Usage:
   ponder [flags]
@@ -92,16 +89,15 @@ Available Commands:
   discord-bot Discord Chat Bot Integration
   help        Help about any command
   image       Generate an image from a prompt
-  printify    Interact with the Printify API
+  tts         OpenAI Text to Speech API - TTS
 
 Flags:
       --config string   config file
   -c, --convo           Conversational Style chat
   -h, --help            help for ponder
-  -x, --perform         Attempt to perform the response as cli command
-  -p, --prompt string   Prompt AI generation
-  -s, --say             Say text out loud (MacOS only)
+      --narrate         Narrate the response using TTS and the default audio output
   -v, --verbose         verbose output
+      --voice string    Voice to use: alloy, ash, coral, echo, fable, onyx, nova, sage and shimmer (default "onyx")
 
 Use "ponder [command] --help" for more information about a command.
 ```

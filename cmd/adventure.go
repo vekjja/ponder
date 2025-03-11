@@ -144,10 +144,10 @@ func adventureImage(prompt string) {
 
 func narratorSay(text string) {
 	if narrate {
-		audioData := tts(text)
+		// audioData := tts(text)
 		spinner.Stop()
 		fmt.Println("🗣️  Narrator: ", text)
-		playAudio(audioData)
+		// playAudio(audioData)
 	}
 	spinner.Stop()
 }

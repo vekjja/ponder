@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -16,9 +15,6 @@ import (
 	"github.com/alecthomas/chroma/formatters"
 	"github.com/alecthomas/chroma/lexers"
 	"github.com/alecthomas/chroma/styles"
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/mp3"
-	"github.com/faiface/beep/speaker"
 	"github.com/pterm/pterm"
 )
 
@@ -95,73 +91,49 @@ func syntaxHighlight(message string) {
 	yellow := "\033[33m" // Yellow color ANSI escape code
 	reset := "\033[0m"   // Reset ANSI escape code
 
+	processLine := func(line string) string {
+		line = backtickRegex.ReplaceAllStringFunc(line, func(match string) string {
+			return cyan + strings.Trim(match, "`") + reset
+		})
+		line = doubleQuoteRegex.ReplaceAllStringFunc(line, func(match string) string {
+			return yellow + match + reset
+		})
+		return line
+	}
+
 	for _, line := range lines {
-		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmedLine, "```") {
 			if inCodeBlock {
-				// Ending a code block, apply syntax highlighting
 				iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 				if err == nil {
 					formatter.Format(os.Stdout, style, iterator)
 				}
-				fmt.Println() // Ensure there's a newline after the code block
+				fmt.Println()
 				codeBuffer.Reset()
 				inCodeBlock = false
 			} else {
-				// Starting a code block
 				inCodeBlock = true
-				lang := strings.TrimPrefix(strings.TrimSpace(line), "```")
+				lang := strings.TrimPrefix(trimmedLine, "```")
 				currentLexer = lexers.Get(lang)
 				if currentLexer == nil {
 					currentLexer = lexers.Fallback
 				}
-				continue // Skip the line with opening backticks
 			}
 		} else if inCodeBlock {
-			codeBuffer.WriteString(line + "\n") // Collect code lines
+			codeBuffer.WriteString(line + "\n")
 		} else {
-			// Process and set colors
-			processedLine := line
-			processedLine = backtickRegex.ReplaceAllStringFunc(processedLine, func(match string) string {
-				return cyan + strings.Trim(match, "`") + reset
-			})
-			processedLine = doubleQuoteRegex.ReplaceAllStringFunc(processedLine, func(match string) string {
-				return yellow + match + reset
-			})
-			fmt.Println("    " + processedLine) // Print with white color
+			fmt.Println("    " + processLine(line))
 		}
 	}
 
-	// Flush the remaining content if still in a code block
 	if inCodeBlock {
 		iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 		if err == nil {
 			formatter.Format(os.Stdout, style, iterator)
 		}
-		fmt.Println() // Ensure there's a newline after the code block
+		fmt.Println()
 	}
-}
-
-func catchErr(err error, level ...string) {
-	if err != nil {
-		// Default level is "warn" if none is provided
-		lvl := "warn"
-		if len(level) > 0 {
-			lvl = level[0] // Use the provided level
-		}
-
-		switch lvl {
-		case "warn":
-			fmt.Println("💔 Warning:", err)
-		case "fatal":
-			fmt.Println("💀 Fatal:", err)
-			os.Exit(1)
-		}
-	}
-}
-
-func formatPrompt(prompt string) string {
-	// Replace any characters that are not letters, numbers, or underscores with dashes
-	return regexp.MustCompile(`[^a-zA-Z0-9_]+`).ReplaceAllString(prompt, "-")
 }
 
 func fileNameFromURL(urlStr string) string {
@@ -178,6 +150,30 @@ func fileNameFromURL(urlStr string) string {
 	return filename
 }
 
+func catchErr(err error, level ...string) {
+	if err != nil {
+		// Default level is "warn" if none is provided
+		lvl := "warn"
+		if len(level) > 0 {
+			lvl = level[0] // Use the provided level
+		}
+
+		fmt.Println("")
+		switch lvl {
+		case "warn":
+			fmt.Println("❗️", err)
+		case "fatal":
+			fmt.Println("💀", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func formatPrompt(prompt string) string {
+	// Replace any characters that are not letters, numbers, or underscores with dashes
+	return regexp.MustCompile(`[^a-zA-Z0-9_]+`).ReplaceAllString(prompt, "-")
+}
+
 func trace() {
 	pc := make([]uintptr, 10) // at least 1 entry needed
 	runtime.Callers(2, pc)
@@ -187,56 +183,32 @@ func trace() {
 }
 
 // playAudio plays audio from a byte slice.
-func playAudio(audioContent []byte) {
-	if verbose {
-		fmt.Println("🔊 Playing audio...")
-	}
+// func playAudio(audioContent []byte) {
+// 	if verbose {
+// 		fmt.Println("🔊 Playing audio...")
+// 	}
 
-	// Create an io.Reader from the byte slice
-	reader := bytes.NewReader(audioContent)
+// 	// Create an io.Reader from the byte slice
+// 	reader := bytes.NewReader(audioContent)
 
-	// Wrap the reader in a NopCloser to make it an io.ReadCloser.
-	readCloser := io.NopCloser(reader)
+// 	// Wrap the reader in a NopCloser to make it an io.ReadCloser.
+// 	readCloser := io.NopCloser(reader)
 
-	// Decode the MP3 stream.
-	streamer, format, err := mp3.Decode(readCloser)
-	catchErr(err)
-	defer streamer.Close()
+// 	// Decode the MP3 stream.
+// 	streamer, format, err := mp3.Decode(readCloser)
+// 	catchErr(err)
+// 	defer streamer.Close()
 
-	// Initialize the speaker with the sample rate of the audio and a buffer size.
-	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	catchErr(err)
+// 	// Initialize the speaker with the sample rate of the audio and a buffer size.
+// 	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+// 	catchErr(err)
 
-	// Play the decoded audio.
-	done := make(chan bool)
-	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-		done <- true
-	})))
+// 	// Play the decoded audio.
+// 	done := make(chan bool)
+// 	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+// 		done <- true
+// 	})))
 
-	// Wait for the audio to finish playing.
-	<-done
-}
-
-func playMP3File(file string) {
-	if verbose {
-		fmt.Println("🔊 Playing audio file:", file)
-	}
-
-	f, err := os.Open(file)
-	catchErr(err)
-	defer f.Close()
-
-	streamer, format, err := mp3.Decode(f)
-	catchErr(err)
-	defer streamer.Close()
-
-	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	catchErr(err)
-
-	done := make(chan bool)
-	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-		done <- true
-	})))
-
-	<-done
-}
+// 	// Wait for the audio to finish playing.
+// 	<-done
+// }

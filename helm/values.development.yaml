@@ -15,22 +15,29 @@ fullnameOverride: ""
 app:
   name: ponder
   args:
-    - discord-bot
-    - --config
-    - ./config
-    - -v
+  - discord-bot
+  - --config
+  - ./config
+  - -v
   configData:
-    openAI_endpoint: "https://api.openAI.com/v1/"
-    openAI_image_downloadPath: "~/Ponder/Images/"
-    openAI_image_size: "1024x1024"
+    openAI_endpoint: "https://api.openai.com/v1/"
+
     openAI_image_model: "dall-e-3"
+    openAI_image_size: "1024x1024"
+    openAI_image_downloadPath: "~/Ponder/Images/"
+
+    openAI_tts_model: "tts-1"
+    openAI_tts_voice: "onyx"
+    openAI_tts_speed: 1.0
+    openAI_tts_responseFormat: "mp3"
+
+    openAI_chat_model: "gpt-4"
     openAI_topP: 0.1
     openAI_temperature: 0
     openAI_maxTokens: 999
     openAI_presencePenalty: 0.6
     openAI_frequencyPenalty: 0.0
-    openAI_chat_model: "gpt-4"
-    openAI_text_model: "text-davinci-003"
+
     discord_message_context_count: 15
     discord_bot_systemMessage: |
       You are Ponder. 
@@ -39,26 +46,16 @@ app:
       Ponder will not tolerate any form of harassment, bullying, or discrimination. 
       If you have any questions or concerns, please let us know. Thank you for using Ponder!
   env:
-    - name: OPENAI_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: openai-api-key
-          key: api-key
-    - name: PRINTIFY_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: printify-api-key
-          key: api-key
-    - name: DISCORD_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: discord-api-key
-          key: api-key
-    - name: DISCORD_PUB_KEY
-      valueFrom:
-        secretKeyRef:
-          name: discord-pub-key
-          key: pub-key
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: openai-api-key
+        key: api-key
+  - name: DISCORD_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: discord-api-key
+        key: api-key
 
 service:
   type: ClusterIP
@@ -74,14 +71,14 @@ ingress:
       auth_request_set $token $upstream_http_x_auth_request_access_token;
   more_set_headers "Request-Id: $req_id";
   hosts:
-    - host: discipuli.ai
-      paths:
-        - path: /
-          pathType: Prefix
+  - host: ponder-dev.livingroom.cloud
+    paths:
+    - path: /
+      pathType: Prefix
   tls:
-    - secretName: discipuli.ai-tls
-      hosts:
-        - discipuli.ai
+  - secretName: ponder-dev-livingroom-cloud-tls
+    hosts:
+    - ponder-dev.livingroom.cloud
 
 serviceAccount:
   create: false
@@ -90,14 +87,11 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext:
-  {}
-  # fsGroup: 2000
+podSecurityContext: {} # fsGroup: 2000
 
 securityContext: {}
 
-resources:
-  {}
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following

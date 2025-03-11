@@ -7,7 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+// Create HTTP Client
+var httpClient = &http.Client{
+	Timeout: time.Second * 60,
+}
 
 // download file from url and save to local directory
 func httpDownloadFile(url string, filePath string) string {
