@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"log"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/seemywingz/goai"
@@ -16,7 +18,9 @@ func initDiscord() {
 	discord, err = discordgo.New("Bot " + DISCORD_API_KEY)
 	catchErr(err)
 
-	discord.Client = httpClient // Set the HTTP client for the Discord session.
+	discord.Client = &http.Client{
+		Timeout: time.Second * 10,
+	}
 
 	// Open a websocket connection to Discord
 	err = discord.Open()

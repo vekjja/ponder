@@ -219,9 +219,9 @@ func startAdventure() {
 		playerInput := getPlayerInput(&player)
 		spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
 		adventureResponse := adventureChat(playerInput)
-		narratorSay(adventureResponse)
 		if generateImages {
 			adventureImage(adventureResponse)
 		}
+		narratorSay(adventureResponse)
 	}
 }
