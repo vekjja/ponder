@@ -9,24 +9,24 @@ import (
 	"os"
 	"time"
 
-	"github.com/seemywingz/goai"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vekjja/goai"
 )
 
 var ponderMessages = []goai.Message{}
 var APP_VERSION = "v0.4.3"
 var ai *goai.Client
 
-var verbose,
-	convo,
+var verbose int
+
+var convo,
 	narrate bool
 
 var prompt,
 	configFile,
 	OPENAI_API_KEY,
-	DISCORD_API_KEY,
-	PRINTIFY_API_KEY string
+	DISCORD_API_KEY string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -82,25 +82,21 @@ func init() {
 	rootCmd.MarkFlagRequired("prompt")
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 	rootCmd.PersistentFlags().BoolVarP(&convo, "convo", "c", false, "Conversational Style chat")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (use -v, -vv, -vvv for more)")
 	rootCmd.PersistentFlags().BoolVar(&narrate, "narrate", false, "Narrate the response using TTS and the default audio output")
 	rootCmd.PersistentFlags().StringVar(&voice, "voice", "onyx", "Voice to use: alloy, ash, coral, echo, fable, onyx, nova, sage and shimmer")
 
 	// Check for Required Environment Variables
 	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
-	if OPENAI_API_KEY == "" && verbose {
+	if OPENAI_API_KEY == "" && verbose > 0 {
 		fmt.Println("⚠️ OPENAI_API_KEY environment variable is not set, continuing without OpenAI API Key")
 	}
 
 	DISCORD_API_KEY = os.Getenv("DISCORD_API_KEY")
-	if DISCORD_API_KEY == "" && verbose {
+	if DISCORD_API_KEY == "" && verbose > 0 {
 		fmt.Println("⚠️ DISCORD_API_KEY environment variable is not set, continuing without Discord API Key")
 	}
 
-	PRINTIFY_API_KEY = os.Getenv("PRINTIFY_API_KEY")
-	if PRINTIFY_API_KEY == "" && verbose {
-		fmt.Println("⚠️ PRINTIFY_API_KEY environment variable is not set, continuing without Printify API Key")
-	}
 }
 
 func viperConfig() {
@@ -132,8 +128,6 @@ func viperConfig() {
 
 	viper.SetDefault("radio_notificationSound", "~/.ponder/audio/notify.mp3")
 
-	viper.SetDefault("printify_endpoint", "https://api.printify.com/v1/")
-
 	viper.SetConfigName("config")        // name of config file (without extension)
 	viper.SetConfigType("yaml")          // REQUIRED the config file does not have an extension
 	viper.AddConfigPath(".")             // look for config in the working directory
@@ -142,19 +136,12 @@ func viperConfig() {
 
 	if configFile != "" {
 		viper.SetConfigFile(configFile)
-		if verbose {
-			fmt.Println("Using config file:", viper.ConfigFileUsed())
-		}
-	} else {
-		if verbose {
-			fmt.Println("Using config file:", viper.ConfigFileUsed())
-		}
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("⚠️  Error Opening Config File:", err.Error(), "- Using Defaults")
 	} else {
-		if verbose {
+		if verbose > 0 {
 			fmt.Println("Using config file:", viper.ConfigFileUsed())
 		}
 	}
@@ -169,7 +156,7 @@ func viperConfig() {
 		API_KEY:          OPENAI_API_KEY,
 		Verbose:          verbose,
 		ImageSize:        viper.GetString("openAI_image_size"),
-		User:             goai.HashAPIKey(OPENAI_API_KEY),
+		User:             "ponder" + goai.HashAPIKey(OPENAI_API_KEY),
 		TopP:             viper.GetFloat64("openAI_topP"),
 		ChatModel:        viper.GetString("openAI_chat_model"),
 		ImageModel:       viper.GetString("openAI_image_model"),

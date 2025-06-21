@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/seemywingz/goai"
 	"github.com/spf13/viper"
+	"github.com/vekjja/goai"
 )
 
 var discord *discordgo.Session
@@ -118,7 +118,7 @@ func handleMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Respond to messages in the #ponder channel
 	if m.GuildID == "" {
-		discordOpenAIResponse(s, m, false)
+		discordOpenAIResponse(s, m)
 		return
 	}
 
@@ -126,14 +126,14 @@ func handleMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 	for _, user := range m.Mentions {
 		if user.ID == s.State.User.ID {
 			// Send a reply to the user who mentioned the bot.
-			discordOpenAIResponse(s, m, true)
+			discordOpenAIResponse(s, m)
 			return
 		}
 	}
 
 }
 
-func discordOpenAIResponse(s *discordgo.Session, m *discordgo.MessageCreate, mention bool) {
+func discordOpenAIResponse(s *discordgo.Session, m *discordgo.MessageCreate) {
 	discord.ChannelTyping(m.ChannelID)
 	openaiMessages := []goai.Message{{
 		Role:    "system",
@@ -173,7 +173,12 @@ func discordPonderImage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		promptOption := commandData.Options[0]
 		prompt := promptOption.StringValue()
 		discordFollowUp("Using DALL-E 3 to generate an image: "+prompt, s, i)
-		res := ai.ImageGen(prompt, "", 1)
+		res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), 1)
+		if err != nil {
+			log.Println("Error generating image:", err)
+			discordFollowUp("❌ Error generating image: "+err.Error(), s, i)
+			return
+		}
 		s.ChannelMessageSend(channelID, res.Data[0].URL)
 	} else {
 		discordFollowUp("Please Provide a Prompt for Image Generation", s, i)
@@ -191,19 +196,6 @@ func discordInitialResponse(content string, s *discordgo.Session, i *discordgo.I
 	}
 	err := s.InteractionRespond(i.Interaction, response)
 	catchErr(err)
-}
-
-func discordGetChannelID(s *discordgo.Session, guildID string, channelName string) string {
-	channels, err := s.GuildChannels(guildID)
-	catchErr(err)
-
-	for _, channel := range channels {
-		if channel.Name == channelName {
-			return channel.ID
-		}
-	}
-
-	return ""
 }
 
 func discordFollowUp(message string, s *discordgo.Session, i *discordgo.InteractionCreate) {

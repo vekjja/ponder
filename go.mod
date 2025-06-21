@@ -1,4 +1,4 @@
-module github.com/seemywingz/ponder
+module github.com/vekjja/ponder
 
 go 1.23.0
 
@@ -8,9 +8,9 @@ require (
 	github.com/alecthomas/chroma v0.10.0
 	github.com/bwmarrin/discordgo v0.28.1
 	github.com/pterm/pterm v0.12.80
-	github.com/seemywingz/goai v0.1.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
+	github.com/vekjja/goai v0.1.1
 )
 
 require (

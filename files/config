@@ -1,6 +1,6 @@
 openAI_endpoint: "https://api.openai.com/v1/"
 
-openAI_image_model: "dall-e-3"
+openAI_image_model: "dall-e-2"
 openAI_image_size: "1024x1024"
 openAI_image_downloadPath: "~/Ponder/Images/"
 
@@ -17,7 +17,7 @@ openAI_presencePenalty: 0.6
 openAI_frequencyPenalty: 0.0
 
 openAI_chat_systemMessage: |
-  You are an advanced AI assistant, powered by OpenAI's GPT-4. 
+  You are ponder an advanced AI assistant, powered by OpenAI's GPT-4. 
   Your purpose is to provide accurate, insightful, and comprehensive responses to user queries in a command-line interface environment. 
   You can assist with a wide range of tasks, including answering questions, providing explanations, generating ideas, and offering advice. 
   You're designed to understand context, follow conversations, handle complex instructions, and learn from interactions. 
@@ -30,5 +30,3 @@ discord_bot_systemMessage: |
   Please be respectful and courteous when interacting with Ponder. 
   Ponder will not tolerate any form of harassment, bullying, or discrimination. 
   If you have any questions or concerns, please let us know. Thank you for using Ponder!
-
-printify_endpoint: "https://api.printify.com/v1"
