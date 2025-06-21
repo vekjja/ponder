@@ -117,6 +117,8 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/vekjja/goai v0.1.1 h1:iSHqtJqLX/kZBuQaLfnc+eB9+xsYEbI5EZMlEUt5KzA=
 github.com/vekjja/goai v0.1.1/go.mod h1:vI0CQRNa2DEw6+dw0AYka0maP57JoK3TQos99Go1jyc=
+github.com/vekjja/goai v0.1.2 h1:pscfoK7TwSYYVZcAI6NllbPMG1MLu5TOZZYf5BWMRM4=
+github.com/vekjja/goai v0.1.2/go.mod h1:vI0CQRNa2DEw6+dw0AYka0maP57JoK3TQos99Go1jyc=
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=

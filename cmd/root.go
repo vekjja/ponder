@@ -48,7 +48,6 @@ var rootCmd = &cobra.Command{
 		if len(args) > 0 {
 			prompt = args[0] // Use the first positional argument as the prompt
 		}
-		// Assuming chatCmd can handle this
 		chatCmd.Run(cmd, []string{prompt})
 	},
 }
