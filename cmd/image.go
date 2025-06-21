@@ -29,7 +29,6 @@ var imageCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		createImage(prompt)
-
 	},
 }
 
