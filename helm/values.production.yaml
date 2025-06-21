@@ -4,7 +4,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/seemywingz/ponder
+  repository: ghcr.io/vekjja/ponder
   pullPolicy: Always
   tag: v0.4.2
 

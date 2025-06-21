@@ -14,9 +14,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/seemywingz/goai"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vekjja/goai"
 )
 
 type Character struct {
@@ -103,10 +103,13 @@ func adventureChat(prompt string) string {
 
 func adventureImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
-	res := ai.ImageGen(prompt, "", 1)
+	res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), 1)
+	if err != nil {
+		fmt.Println("❌ Error generating image:", err)
+		return
+	}
 
 	url := res.Data[0].URL
-	// fmt.Println("🌐 Image URL: " + url)
 
 	promptFormatted := formatPrompt(prompt)
 	filePath := viper.GetString("openAI_image_downloadPath")
@@ -143,13 +146,17 @@ func adventureImage(prompt string) {
 }
 
 func narratorSay(text string) {
+	fmt.Println()
 	if narrate {
 		// audioData := tts(text)
 		spinner.Stop()
 		fmt.Println("🗣️  Narrator: ", text)
 		// playAudio(audioData)
+	} else {
+
+		fmt.Println("🗣️  Narrator: ", text)
+		spinner.Stop()
 	}
-	spinner.Stop()
 }
 
 func getPlayerInput(player *Character) string {
@@ -188,7 +195,7 @@ func startAdventure() {
 		Hunger:      0,
 	}
 
-	spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
+	// spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
 	narratorSay("Welcome " + player.Name + ", to the world of adventure! Describe your character, be as detailed as you like.")
 	playerDescription := getPlayerInput(&player)
 	player.Description = playerDescription
@@ -219,9 +226,9 @@ func startAdventure() {
 		playerInput := getPlayerInput(&player)
 		spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
 		adventureResponse := adventureChat(playerInput)
-		narratorSay(adventureResponse)
 		if generateImages {
 			adventureImage(adventureResponse)
 		}
+		narratorSay(adventureResponse)
 	}
 }

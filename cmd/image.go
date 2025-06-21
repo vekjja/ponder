@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 NAME HERE Kevin.Jayne@iCloud.com
+Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 package cmd
 
@@ -18,8 +18,7 @@ import (
 )
 
 var open, download bool
-var imageFile string
-var n int
+var n int = 1
 
 var imageCmd = &cobra.Command{
 	Use:   "image",
@@ -29,7 +28,7 @@ var imageCmd = &cobra.Command{
 		return checkArgs(args)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		createImage(prompt, imageFile)
+		createImage(prompt)
 	},
 }
 
@@ -38,12 +37,16 @@ func init() {
 	imageCmd.Flags().BoolVarP(&download, "download", "d", false, "Download image(s) to local directory")
 	imageCmd.Flags().BoolVarP(&open, "open", "o", false, "Open image in system default viewer")
 	imageCmd.Flags().IntVarP(&n, "n", "n", 1, "Number of images to generate")
-	imageCmd.Flags().StringVarP(&imageFile, "file", "f", "", "Image file to edit")
 }
 
-func createImage(prompt, imageFile string) {
+func createImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
-	res := ai.ImageGen(prompt, imageFile, n)
+	res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), n)
+
+	if err != nil {
+		fmt.Println("❌ Error generating image:", err)
+		return
+	}
 
 	for imgNum, data := range res.Data {
 		url := data.URL

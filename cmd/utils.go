@@ -3,9 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -34,39 +32,6 @@ var ponderSpinner = &pterm.SpinnerPrinter{
 	WarningPrinter:      &pterm.Warning,
 	RemoveWhenDone:      true,
 	Text:                "Pondering...",
-}
-
-func expanding(emoji string, maxRadius int) []string {
-	totalLength := maxRadius*2 - 1          // Total fixed length for each line
-	sequence := make([]string, maxRadius*2) // Frames for expanding and contracting
-
-	// Generate expanding sequence
-	for i := 0; i < maxRadius; i++ {
-		spacesBefore := strings.Repeat(" ", maxRadius-i-1)
-		numEmojis := i + 1
-		emojis := strings.Repeat(emoji+" ", numEmojis)
-		spacesAfterCount := totalLength - len(spacesBefore) - len(emojis)
-		if spacesAfterCount < 0 {
-			spacesAfterCount = 0 // Ensure spacesAfterCount is never negative
-		}
-		spacesAfter := strings.Repeat(" ", spacesAfterCount)
-		sequence[i] = spacesBefore + emojis + spacesAfter
-	}
-
-	// Generate contracting sequence
-	for i := 0; i < maxRadius; i++ {
-		spacesBefore := strings.Repeat(" ", i+1)
-		numEmojis := maxRadius - i
-		emojis := strings.Repeat(emoji+" ", numEmojis)
-		spacesAfterCount := totalLength - len(spacesBefore) - len(emojis)
-		if spacesAfterCount < 0 {
-			spacesAfterCount = 0 // Prevent negative space count
-		}
-		spacesAfter := strings.Repeat(" ", spacesAfterCount)
-		sequence[maxRadius+i] = spacesBefore + emojis + spacesAfter
-	}
-
-	return sequence
 }
 
 func syntaxHighlight(message string) {
@@ -134,20 +99,6 @@ func syntaxHighlight(message string) {
 		}
 		fmt.Println()
 	}
-}
-
-func fileNameFromURL(urlStr string) string {
-	u, err := url.Parse(urlStr)
-	catchErr(err)
-	// Get the last path component of the URL
-	filename := filepath.Base(u.Path)
-	// Replace any characters that are not letters, numbers, or underscores with dashes
-	filename = regexp.MustCompile(`[^a-zA-Z0-9_]+`).ReplaceAllString(filename, "-")
-	// Limit the filename to 255 characters
-	if len(filename) >= 255 {
-		filename = filename[:255]
-	}
-	return filename
 }
 
 func catchErr(err error, level ...string) {

@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 NAME HERE Kevin.Jayne@iCloud.com
+Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 package cmd
 
@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/seemywingz/goai"
 	"github.com/spf13/cobra"
+	"github.com/vekjja/goai"
 )
 
 func init() {
@@ -90,7 +90,7 @@ func getUserInput() (string, error) {
 	}
 	// remove the delimiter from the string
 	input = strings.TrimSuffix(input, "\n")
-	if verbose {
+	if verbose > 0 {
 		trace()
 		fmt.Println(input)
 	}
