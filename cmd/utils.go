@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -131,4 +132,43 @@ func trace() {
 	f := runtime.FuncForPC(pc[0])
 	file, line := f.FileLine(pc[0])
 	fmt.Printf("%s:%d\n%s\n", file, line, f.Name())
+}
+
+func playAudio(audioData []byte) {
+	// Create a temporary file to store the audio data
+	tmpFile, err := os.CreateTemp("", "tts-*.mp3")
+	if err != nil {
+		catchErr(err)
+		return
+	}
+	defer os.Remove(tmpFile.Name()) // Clean up the temp file when done
+
+	// Write audio data to the temp file
+	if _, err := tmpFile.Write(audioData); err != nil {
+		tmpFile.Close()
+		catchErr(err)
+		return
+	}
+	tmpFile.Close()
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd := exec.Command("afplay", tmpFile.Name())
+		if err := cmd.Run(); err != nil {
+			catchErr(err)
+			return
+		}
+	case "linux":
+		cmd := exec.Command("aplay", tmpFile.Name())
+		if err := cmd.Run(); err != nil {
+			catchErr(err)
+			return
+		}
+	case "windows":
+		cmd := exec.Command("start", tmpFile.Name())
+		if err := cmd.Run(); err != nil {
+			catchErr(err)
+			return
+		}
+	}
 }

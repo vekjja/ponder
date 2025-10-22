@@ -1,7 +1,8 @@
+package cmd
+
 /*
 Copyright © 2023 Kevin.Jayne@iCloud.com
 */
-package cmd
 
 import (
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"github.com/vekjja/goai"
 )
 
+// Character represents a player in the adventure
 type Character struct {
 	Name        string
 	Description string
@@ -148,10 +150,12 @@ func adventureImage(prompt string) {
 func narratorSay(text string) {
 	fmt.Println()
 	if narrate {
-		// audioData := tts(text)
+		audioData := tts(text)
 		spinner.Stop()
 		fmt.Println("🗣️  Narrator: ", text)
-		// playAudio(audioData)
+		if audioData != nil {
+			playAudio(audioData)
+		}
 	} else {
 
 		fmt.Println("🗣️  Narrator: ", text)

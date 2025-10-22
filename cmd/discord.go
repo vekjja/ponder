@@ -1,7 +1,8 @@
+package cmd
+
 /*
 Copyright © 2023 Kevin.Jayne@iCloud.com
 */
-package cmd
 
 import (
 	"github.com/spf13/cobra"

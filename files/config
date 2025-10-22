@@ -1,6 +1,6 @@
 openAI_endpoint: "https://api.openai.com/v1/"
 
-openAI_image_model: "dall-e-2"
+openAI_image_model: "dall-e-3"
 openAI_image_size: "1024x1024"
 openAI_image_downloadPath: "~/Ponder/Images/"
 

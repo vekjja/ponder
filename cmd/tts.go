@@ -1,7 +1,8 @@
+package cmd
+
 /*
 Copyright © 2024 Kevin Jayne <kevin.jayne@icloud.com>
 */
-package cmd
 
 import (
 	"bytes"
@@ -26,10 +27,10 @@ var ttsCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		tts(prompt)
-		// audio := tts(prompt)
-		// if audio != nil {
-		// 	playAudio(audio)
-		// }
+		audio := tts(prompt)
+		if audio != nil {
+			playAudio(audio)
+		}
 	},
 }
 

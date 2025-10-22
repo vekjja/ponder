@@ -1,7 +1,8 @@
+package cmd
+
 /*
 Copyright © 2023 Kevin Jayne <kevin.jayne@icloud.com>
 */
-package cmd
 
 import (
 	"fmt"
@@ -15,7 +16,7 @@ import (
 )
 
 var ponderMessages = []goai.Message{}
-var APP_VERSION = "v0.4.3"
+var appVersion = "v0.4.3"
 var ai *goai.Client
 
 var verbose int
@@ -25,17 +26,17 @@ var convo,
 
 var prompt,
 	configFile,
-	OPENAI_API_KEY,
-	DISCORD_API_KEY string
+	openaiAPIKey,
+	discordAPIKey string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "ponder",
-	Short: "Ponder OpenAI Chat Bot " + APP_VERSION,
+	Short: "Ponder OpenAI Chat Bot " + appVersion,
 	Long: `
 	Ponder
 	GitHub: https://github.com/seemywingz/ponder
-	App Version: ` + APP_VERSION + `
+	App Version: ` + appVersion + `
 
   Ponder uses OpenAI's API to generate text responses to user input.
   Or whatever else you can think of. 🤔
@@ -82,17 +83,17 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 	rootCmd.PersistentFlags().BoolVarP(&convo, "convo", "c", false, "Conversational Style chat")
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (use -v, -vv, -vvv for more)")
-	rootCmd.PersistentFlags().BoolVar(&narrate, "narrate", false, "Narrate the response using TTS and the default audio output")
+	rootCmd.PersistentFlags().BoolVarP(&narrate, "narrate", "n", false, "Narrate the response using TTS and the default audio output")
 	rootCmd.PersistentFlags().StringVar(&voice, "voice", "onyx", "Voice to use: alloy, ash, coral, echo, fable, onyx, nova, sage and shimmer")
 
 	// Check for Required Environment Variables
-	OPENAI_API_KEY = os.Getenv("OPENAI_API_KEY")
-	if OPENAI_API_KEY == "" && verbose > 0 {
+	openaiAPIKey = os.Getenv("OPENAI_API_KEY")
+	if openaiAPIKey == "" && verbose > 0 {
 		fmt.Println("⚠️ OPENAI_API_KEY environment variable is not set, continuing without OpenAI API Key")
 	}
 
-	DISCORD_API_KEY = os.Getenv("DISCORD_API_KEY")
-	if DISCORD_API_KEY == "" && verbose > 0 {
+	discordAPIKey = os.Getenv("DISCORD_API_KEY")
+	if discordAPIKey == "" && verbose > 0 {
 		fmt.Println("⚠️ DISCORD_API_KEY environment variable is not set, continuing without Discord API Key")
 	}
 
@@ -152,10 +153,10 @@ func viperConfig() {
 
 	ai = &goai.Client{
 		Endpoint:         viper.GetString("openAI_endpoint"),
-		API_KEY:          OPENAI_API_KEY,
+		API_KEY:          openaiAPIKey,
 		Verbose:          verbose,
 		ImageSize:        viper.GetString("openAI_image_size"),
-		User:             "ponder" + goai.HashAPIKey(OPENAI_API_KEY),
+		User:             "ponder" + goai.HashAPIKey(openaiAPIKey),
 		TopP:             viper.GetFloat64("openAI_topP"),
 		ChatModel:        viper.GetString("openAI_chat_model"),
 		ImageModel:       viper.GetString("openAI_image_model"),
