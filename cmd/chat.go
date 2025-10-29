@@ -200,6 +200,7 @@ func (m chatHistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Don't handle keys while waiting for response
 		if m.waiting {
 			if msg.Type == tea.KeyCtrlC {
+				stopAudio()
 				return m, tea.Quit
 			}
 			return m, nil
@@ -207,6 +208,7 @@ func (m chatHistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.Type {
 		case tea.KeyCtrlC:
+			stopAudio()
 			return m, tea.Quit
 		case tea.KeyCtrlD:
 			// Submit the message
@@ -313,6 +315,7 @@ func (m simpleInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
+			stopAudio()
 			return m, tea.Quit
 		case tea.KeyCtrlD:
 			// Submit

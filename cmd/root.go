@@ -71,8 +71,14 @@ func checkArgs(args []string) error {
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		CleanupAndExit()
 		os.Exit(1)
 	}
+}
+
+// CleanupAndExit performs cleanup before exiting the application
+func CleanupAndExit() {
+	stopAudio()
 }
 
 func init() {

@@ -35,6 +35,9 @@ var ponderSpinner = &pterm.SpinnerPrinter{
 	Text:                "Pondering...",
 }
 
+// Track the currently playing audio process
+var audioCmd *exec.Cmd
+
 func syntaxHighlight(message string) {
 	fmt.Print(syntaxHighlightString(message))
 }
@@ -146,40 +149,61 @@ func trace() {
 }
 
 func playAudio(audioData []byte) {
+	// Stop any currently playing audio first
+	stopAudio()
+
 	// Create a temporary file to store the audio data
 	tmpFile, err := os.CreateTemp("", "tts-*.mp3")
 	if err != nil {
 		catchErr(err)
 		return
 	}
-	defer os.Remove(tmpFile.Name()) // Clean up the temp file when done
 
 	// Write audio data to the temp file
 	if _, err := tmpFile.Write(audioData); err != nil {
 		tmpFile.Close()
+		os.Remove(tmpFile.Name())
 		catchErr(err)
 		return
 	}
 	tmpFile.Close()
 
+	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		cmd := exec.Command("afplay", tmpFile.Name())
-		if err := cmd.Run(); err != nil {
-			catchErr(err)
-			return
-		}
+		cmd = exec.Command("afplay", tmpFile.Name())
 	case "linux":
-		cmd := exec.Command("aplay", tmpFile.Name())
-		if err := cmd.Run(); err != nil {
-			catchErr(err)
-			return
-		}
+		cmd = exec.Command("aplay", tmpFile.Name())
 	case "windows":
-		cmd := exec.Command("start", tmpFile.Name())
-		if err := cmd.Run(); err != nil {
-			catchErr(err)
-			return
-		}
+		cmd = exec.Command("start", tmpFile.Name())
+	default:
+		os.Remove(tmpFile.Name())
+		return
+	}
+
+	// Store the command so it can be interrupted
+	audioCmd = cmd
+
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		catchErr(err)
+		os.Remove(tmpFile.Name())
+		audioCmd = nil
+		return
+	}
+
+	// Wait for it to finish and clean up
+	go func() {
+		cmd.Wait()
+		os.Remove(tmpFile.Name())
+		audioCmd = nil
+	}()
+}
+
+// stopAudio stops any currently playing audio
+func stopAudio() {
+	if audioCmd != nil && audioCmd.Process != nil {
+		audioCmd.Process.Kill()
+		audioCmd = nil
 	}
 }
