@@ -36,7 +36,12 @@ var ponderSpinner = &pterm.SpinnerPrinter{
 }
 
 func syntaxHighlight(message string) {
+	fmt.Print(syntaxHighlightString(message))
+}
+
+func syntaxHighlightString(message string) string {
 	lines := strings.Split(message, "\n")
+	var result strings.Builder
 	var codeBuffer bytes.Buffer
 	var inCodeBlock bool
 	var currentLexer chroma.Lexer
@@ -73,9 +78,11 @@ func syntaxHighlight(message string) {
 			if inCodeBlock {
 				iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 				if err == nil {
-					formatter.Format(os.Stdout, style, iterator)
+					var codeOut bytes.Buffer
+					formatter.Format(&codeOut, style, iterator)
+					result.WriteString(codeOut.String())
 				}
-				fmt.Println()
+				result.WriteString("\n")
 				codeBuffer.Reset()
 				inCodeBlock = false
 			} else {
@@ -89,17 +96,21 @@ func syntaxHighlight(message string) {
 		} else if inCodeBlock {
 			codeBuffer.WriteString(line + "\n")
 		} else {
-			fmt.Println("    " + processLine(line))
+			result.WriteString("    " + processLine(line) + "\n")
 		}
 	}
 
 	if inCodeBlock {
 		iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 		if err == nil {
-			formatter.Format(os.Stdout, style, iterator)
+			var codeOut bytes.Buffer
+			formatter.Format(&codeOut, style, iterator)
+			result.WriteString(codeOut.String())
 		}
-		fmt.Println()
+		result.WriteString("\n")
 	}
+
+	return result.String()
 }
 
 func catchErr(err error, level ...string) {
