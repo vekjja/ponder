@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -27,10 +28,20 @@ var ttsCmd = &cobra.Command{
 		var text string
 		if len(args) > 0 {
 			text = args[0]
+			prompt = text
+			// _, audio := ttsResponse(text)
+			// if audio != nil {
+			// 	go playAudio(audio)
+			// }
 		}
-		audio := tts(text)
-		if audio != nil {
-			playAudio(audio)
+		// Open the chat history model for interactive TTS
+		p := tea.NewProgram(
+			initialTTSHistoryModel(),
+			tea.WithAltScreen(),
+			tea.WithMouseCellMotion(),
+		)
+		if _, err := p.Run(); err != nil {
+			catchErr(err, "fatal")
 		}
 	},
 }
@@ -38,6 +49,28 @@ var ttsCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(ttsCmd)
 	ttsCmd.Flags().StringVarP(&audioFile, "file", "f", "", "File to save audio to")
+}
+
+func initialTTSHistoryModel() chatHistoryModel {
+	return newChatHistoryModel(ChatHistoryConfig{
+		Title:           "🔊 Text to Speech",
+		Placeholder:     "Enter text to convert to speech...",
+		UserLabel:       "Text: ",
+		AssistantLabel:  "Playing Audio",
+		UserColor:       userColor,
+		AssistantColor:  assistantColor,
+		ResponseHandler: ttsResponse,
+	})
+}
+
+func ttsResponse(text string) (string, []byte) {
+	spinner, _ = ponderSpinner.Start()
+	audio := tts(text)
+	spinner.Stop()
+	if audio != nil {
+		go playAudio(audio)
+	}
+	return "", nil
 }
 
 func tts(text string) []byte {
