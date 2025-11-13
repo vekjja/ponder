@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -34,8 +35,16 @@ var ponderSpinner = &pterm.SpinnerPrinter{
 	Text:                "Pondering...",
 }
 
+// Track the currently playing audio process
+var audioCmd *exec.Cmd
+
 func syntaxHighlight(message string) {
+	fmt.Print(syntaxHighlightString(message))
+}
+
+func syntaxHighlightString(message string) string {
 	lines := strings.Split(message, "\n")
+	var result strings.Builder
 	var codeBuffer bytes.Buffer
 	var inCodeBlock bool
 	var currentLexer chroma.Lexer
@@ -72,9 +81,11 @@ func syntaxHighlight(message string) {
 			if inCodeBlock {
 				iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 				if err == nil {
-					formatter.Format(os.Stdout, style, iterator)
+					var codeOut bytes.Buffer
+					formatter.Format(&codeOut, style, iterator)
+					result.WriteString(codeOut.String())
 				}
-				fmt.Println()
+				result.WriteString("\n")
 				codeBuffer.Reset()
 				inCodeBlock = false
 			} else {
@@ -88,17 +99,21 @@ func syntaxHighlight(message string) {
 		} else if inCodeBlock {
 			codeBuffer.WriteString(line + "\n")
 		} else {
-			fmt.Println("    " + processLine(line))
+			result.WriteString("    " + processLine(line) + "\n")
 		}
 	}
 
 	if inCodeBlock {
 		iterator, err := currentLexer.Tokenise(nil, codeBuffer.String())
 		if err == nil {
-			formatter.Format(os.Stdout, style, iterator)
+			var codeOut bytes.Buffer
+			formatter.Format(&codeOut, style, iterator)
+			result.WriteString(codeOut.String())
 		}
-		fmt.Println()
+		result.WriteString("\n")
 	}
+
+	return result.String()
 }
 
 func catchErr(err error, level ...string) {
@@ -133,33 +148,62 @@ func trace() {
 	fmt.Printf("%s:%d\n%s\n", file, line, f.Name())
 }
 
-// playAudio plays audio from a byte slice.
-// func playAudio(audioContent []byte) {
-// 	if verbose {
-// 		fmt.Println("🔊 Playing audio...")
-// 	}
+func playAudio(audioData []byte) {
+	// Stop any currently playing audio first
+	stopAudio()
 
-// 	// Create an io.Reader from the byte slice
-// 	reader := bytes.NewReader(audioContent)
+	// Create a temporary file to store the audio data
+	tmpFile, err := os.CreateTemp("", "tts-*.mp3")
+	if err != nil {
+		catchErr(err)
+		return
+	}
 
-// 	// Wrap the reader in a NopCloser to make it an io.ReadCloser.
-// 	readCloser := io.NopCloser(reader)
+	// Write audio data to the temp file
+	if _, err := tmpFile.Write(audioData); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+		catchErr(err)
+		return
+	}
+	tmpFile.Close()
 
-// 	// Decode the MP3 stream.
-// 	streamer, format, err := mp3.Decode(readCloser)
-// 	catchErr(err)
-// 	defer streamer.Close()
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("afplay", tmpFile.Name())
+	case "linux":
+		cmd = exec.Command("aplay", tmpFile.Name())
+	case "windows":
+		cmd = exec.Command("start", tmpFile.Name())
+	default:
+		os.Remove(tmpFile.Name())
+		return
+	}
 
-// 	// Initialize the speaker with the sample rate of the audio and a buffer size.
-// 	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-// 	catchErr(err)
+	// Store the command so it can be interrupted
+	audioCmd = cmd
 
-// 	// Play the decoded audio.
-// 	done := make(chan bool)
-// 	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-// 		done <- true
-// 	})))
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		catchErr(err)
+		os.Remove(tmpFile.Name())
+		audioCmd = nil
+		return
+	}
 
-// 	// Wait for the audio to finish playing.
-// 	<-done
-// }
+	// Wait for it to finish and clean up
+	go func() {
+		cmd.Wait()
+		os.Remove(tmpFile.Name())
+		audioCmd = nil
+	}()
+}
+
+// stopAudio stops any currently playing audio
+func stopAudio() {
+	if audioCmd != nil && audioCmd.Process != nil {
+		audioCmd.Process.Kill()
+		audioCmd = nil
+	}
+}

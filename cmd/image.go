@@ -1,7 +1,8 @@
+package cmd
+
 /*
 Copyright © 2023 Kevin.Jayne@iCloud.com
 */
-package cmd
 
 import (
 	"fmt"
@@ -24,9 +25,9 @@ var imageCmd = &cobra.Command{
 	Use:   "image",
 	Short: "Generate an image from a prompt",
 	Long:  ``,
-	Args: func(cmd *cobra.Command, args []string) error {
-		return checkArgs(args)
-	},
+	// Args: func(cmd *cobra.Command, args []string) error {
+	// 	return checkArgs(args)
+	// },
 	Run: func(cmd *cobra.Command, args []string) {
 		createImage(prompt)
 	},

@@ -12,7 +12,7 @@ openAI_tts_responseFormat: "mp3"
 openAI_chat_model: "gpt-4"
 openAI_topP: 0.1
 openAI_temperature: 0
-openAI_maxTokens: 999
+openAI_maxTokens: 4096
 openAI_presencePenalty: 0.6
 openAI_frequencyPenalty: 0.0
 

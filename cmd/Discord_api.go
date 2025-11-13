@@ -15,7 +15,7 @@ var discord *discordgo.Session
 
 func initDiscord() {
 	var err error
-	discord, err = discordgo.New("Bot " + DISCORD_API_KEY)
+	discord, err = discordgo.New("Bot " + discordAPIKey)
 	catchErr(err)
 
 	discord.Client = &http.Client{
