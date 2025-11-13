@@ -5,9 +5,6 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 
 import (
-	"fmt"
-
-	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/vekjja/goai"
@@ -65,51 +62,4 @@ func chatCompletion(prompt string) string {
 		Content: res.Choices[0].Message.Content,
 	})
 	return res.Choices[0].Message.Content
-}
-
-// simpleInputModel is a simple editor for single inputs
-type simpleInputModel struct {
-	textarea textarea.Model
-	err      error
-}
-
-func (m simpleInputModel) Init() tea.Cmd {
-	return textarea.Blink
-}
-
-func (m simpleInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
-			stopAudio()
-			return m, tea.Quit
-		case tea.KeyCtrlD:
-			// Submit
-			return m, tea.Quit
-		default:
-			if !m.textarea.Focused() {
-				cmd = m.textarea.Focus()
-				cmds = append(cmds, cmd)
-			}
-		}
-
-	case error:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textarea, cmd = m.textarea.Update(msg)
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
-}
-
-func (m simpleInputModel) View() string {
-	return fmt.Sprintf(
-		"%s\n",
-		m.textarea.View(),
-	)
 }
