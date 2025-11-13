@@ -28,7 +28,9 @@ var ttsCmd = &cobra.Command{
 		if len(args) > 0 {
 			text = args[0]
 		}
+		spinner, _ = ponderSpinner.Start()
 		audio := tts(text)
+		spinner.Stop()
 		if audio != nil {
 			playAudio(audio)
 		}
