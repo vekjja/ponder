@@ -37,7 +37,7 @@ var rootCmd = &cobra.Command{
 	Short: "Ponder OpenAI Chat Bot " + appVersion,
 	Long: `
 	Ponder
-	GitHub: https://github.com/seemywingz/ponder
+	GitHub: https://github.com/vekjja/ponder
 	App Version: ` + appVersion + `
 
   Ponder uses OpenAI's API to generate text responses to user input.

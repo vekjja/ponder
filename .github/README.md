@@ -2,7 +2,7 @@
 
 **OpenAI-Powered Multi-Modal Chat Tool**
 
-[![main](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml/badge.svg?branch=v0.4.2)](https://github.com/seemywingz/ponder/actions/workflows/dockerBuildX.yml)
+[![main](https://github.com/vekjja/ponder/actions/workflows/dockerBuildX.yml/badge.svg?branch=v0.4.2)](https://github.com/vekjja/ponder/actions/workflows/dockerBuildX.yml)
 
 Ponder is a versatile command-line application and Discord bot that leverages OpenAI's API to provide interactive chat, image generation, text-to-speech, and immersive text adventures. Built with Go, it offers a beautiful terminal UI powered by Bubble Tea and supports both local CLI usage and containerized deployments.
 
@@ -371,7 +371,7 @@ See [LICENSE](../LICENSE) file for details.
 
 ## 🔗 Links
 
-- **GitHub Repository**: [https://github.com/seemywingz/ponder](https://github.com/seemywingz/ponder)
+- **GitHub Repository**: [https://github.com/vekjja/ponder](https://github.com/vekjja/ponder)
 - **OpenAI API Documentation**: [https://platform.openai.com/docs](https://platform.openai.com/docs)
 - **Discord Developer Portal**: [https://discord.com/developers](https://discord.com/developers)
 
