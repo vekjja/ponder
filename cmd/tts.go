@@ -29,6 +29,10 @@ var ttsCmd = &cobra.Command{
 		if len(args) > 0 {
 			text = args[0]
 			prompt = text
+			// _, audio := ttsResponse(text)
+			// if audio != nil {
+			// 	go playAudio(audio)
+			// }
 		}
 		// Open the chat history model for interactive TTS
 		p := tea.NewProgram(
