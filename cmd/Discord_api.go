@@ -155,7 +155,7 @@ func discordOpenAIResponse(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Send the messages to OpenAI
 	oaiResponse, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
 		Messages: openaiMessages,
-		Model:    chatModel,
+		Model:    viper.GetString("openAI_chat_model"),
 	})
 	catchErr(err)
 	s.ChannelMessageSend(m.ChannelID, oaiResponse.Choices[0].Message.Content)
@@ -173,8 +173,8 @@ func discordPonderImage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		discordFollowUp("Using DALL-E 3 to generate an image: "+prompt, s, i)
 		res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
 			Prompt: prompt,
-			Model:  openai.ImageModel(imageModel),
-			Size:   openai.ImageGenerateParamsSize(imageSize),
+			Model:  openai.ImageModel(viper.GetString("openAI_image_model")),
+			Size:   openai.ImageGenerateParamsSize(viper.GetString("openAI_image_size")),
 			N:      openai.Int(1),
 		})
 		if err != nil {

@@ -27,9 +27,6 @@ var imageCmd = &cobra.Command{
 	Use:   "image",
 	Short: "Generate an image from a prompt",
 	Long:  ``,
-	// Args: func(cmd *cobra.Command, args []string) error {
-	// 	return checkArgs(args)
-	// },
 	Run: func(cmd *cobra.Command, args []string) {
 		var prompt string
 		if len(args) > 0 {
@@ -43,15 +40,15 @@ func init() {
 	rootCmd.AddCommand(imageCmd)
 	imageCmd.Flags().BoolVarP(&download, "download", "d", false, "Download image(s) to local directory")
 	imageCmd.Flags().BoolVarP(&open, "open", "o", false, "Open image in system default viewer")
-	imageCmd.Flags().IntVarP(&n, "n", "n", 1, "Number of images to generate")
+	imageCmd.Flags().IntVarP(&n, "count", "c", 1, "Number of images to generate")
 }
 
 func createImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
 	res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
 		Prompt: prompt,
-		Model:  openai.ImageModel(imageModel),
-		Size:   openai.ImageGenerateParamsSize(imageSize),
+		Model:  openai.ImageModel(viper.GetString("openAI_image_model")),
+		Size:   openai.ImageGenerateParamsSize(viper.GetString("openAI_image_size")),
 		N:      openai.Int(int64(n)),
 	})
 

@@ -28,21 +28,8 @@ var prompt,
 	openaiAPIKey,
 	discordAPIKey string
 
-// Configuration variables for OpenAI settings
-var (
-	chatModel        string
-	imageModel       string
-	imageSize        string
-	ttsModel         string
-	ttsVoice         string
-	ttsSpeed         float64
-	maxTokens        int
-	temperature      float64
-	topP             float64
-	frequencyPenalty float64
-	presencePenalty  float64
-	openaiUser       string
-)
+// Configuration variable for OpenAI user ID
+var openaiUser string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -158,18 +145,7 @@ func viperConfig() {
 		openai.DeveloperMessage(systemMessage),
 	}
 
-	// Load configuration into global variables
-	chatModel = viper.GetString("openAI_chat_model")
-	imageModel = viper.GetString("openAI_image_model")
-	imageSize = viper.GetString("openAI_image_size")
-	ttsModel = viper.GetString("openAI_tts_model")
-	ttsVoice = viper.GetString("openAI_tts_voice")
-	ttsSpeed = viper.GetFloat64("openAI_tts_speed")
-	maxTokens = viper.GetInt("openAI_maxTokens")
-	temperature = viper.GetFloat64("openAI_temperature")
-	topP = viper.GetFloat64("openAI_topP")
-	frequencyPenalty = viper.GetFloat64("openAI_frequencyPenalty")
-	presencePenalty = viper.GetFloat64("openAI_presencePenalty")
+	// Initialize OpenAI user ID
 	openaiUser = "ponder" + HashAPIKey(openaiAPIKey)
 
 	opts := []option.RequestOption{
