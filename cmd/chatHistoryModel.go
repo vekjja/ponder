@@ -10,6 +10,22 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// UI configuration constants
+const (
+	textareaHeight = 3
+	textareaWidth  = 4 // padding for width
+	titleLines     = 1
+	helpLines      = 1
+	charLimit      = 10000
+
+	// Colors
+	titleColor     = "212"
+	userColor      = "86"
+	assistantColor = "212"
+	helpColor      = "240"
+	systemColor    = "240"
+)
+
 type responseMsg struct {
 	content string
 	audio   []byte
@@ -31,7 +47,7 @@ func initialChatHistoryModel() chatHistoryModel {
 	ta := textarea.New()
 	ta.Placeholder = "Enter your message here..."
 	ta.Focus()
-	ta.CharLimit = 10000
+	ta.CharLimit = charLimit
 	ta.ShowLineNumbers = false
 
 	m := chatHistoryModel{textarea: ta}
@@ -60,21 +76,20 @@ func (m chatHistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// Layout: title(1) + viewport(h) + textarea(3) + help(1) = msg.Height
-		// So: h = msg.Height - 5
-		textareaHeight := 3
-		h := msg.Height - textareaHeight - 2 // -2 for title and help
+		// Layout: title + viewport + textarea + help = msg.Height
+		// viewport height = msg.Height - (titleLines + textareaHeight + helpLines)
+		h := msg.Height - (titleLines + textareaHeight + helpLines)
 		if h < 1 {
 			h = 1
 		}
 		if !m.ready {
 			m.viewport = viewport.New(msg.Width, h)
-			m.textarea.SetWidth(msg.Width - 4)
+			m.textarea.SetWidth(msg.Width - textareaWidth)
 			m.textarea.SetHeight(textareaHeight)
 			m.ready = true
 		} else {
 			m.viewport.Width, m.viewport.Height = msg.Width, h
-			m.textarea.SetWidth(msg.Width - 4)
+			m.textarea.SetWidth(msg.Width - textareaWidth)
 			m.textarea.SetHeight(textareaHeight)
 		}
 		m.viewport.SetContent(m.renderMessages())
@@ -136,8 +151,8 @@ func (m chatHistoryModel) View() string {
 		help = "⏳ Waiting... | Ctrl+C quit"
 	}
 
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212")).Render("💭 Ponder Chat")
-	helpLine := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(help)
+	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(titleColor)).Render("💭 Ponder Chat")
+	helpLine := lipgloss.NewStyle().Foreground(lipgloss.Color(helpColor)).Italic(true).Render(help)
 
 	return fmt.Sprintf("%s\n%s\n%s\n%s", title, m.viewport.View(), m.textarea.View(), helpLine)
 }
@@ -160,13 +175,13 @@ func (m chatHistoryModel) renderMessages() string {
 		}
 		switch msg.role {
 		case "user":
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("86")).Bold(true).Render("You: "))
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(userColor)).Bold(true).Render("You: "))
 			b.WriteString(wrap.Render(msg.content))
 		case "assistant":
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true).Render("Ponder:") + "\n")
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(assistantColor)).Bold(true).Render("Ponder:") + "\n")
 			b.WriteString(wrap.Render(syntaxHighlightString(msg.content)))
 		case "system":
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(wrap.Render(msg.content)))
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(systemColor)).Italic(true).Render(wrap.Render(msg.content)))
 		}
 		b.WriteString("\n")
 	}
