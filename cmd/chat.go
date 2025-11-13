@@ -23,10 +23,8 @@ var chatCmd = &cobra.Command{
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		var text string
 		if len(args) > 0 {
-			text = args[0]
-			prompt = text
+			prompt = args[0]
 		}
 		p := tea.NewProgram(
 			initialChatHistoryModel(),

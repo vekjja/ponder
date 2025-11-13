@@ -33,7 +33,7 @@ var openaiUser string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "ponder",
+	Use:   "ponder [prompt]",
 	Short: "Ponder OpenAI Chat Bot " + appVersion,
 	Long: `
 	Ponder
@@ -43,9 +43,7 @@ var rootCmd = &cobra.Command{
   Ponder uses OpenAI's API to generate text responses to user input.
   Or whatever else you can think of. 🤔
 	`,
-	// Args: func(cmd *cobra.Command, args []string) error {
-	// 	return checkArgs(args)
-	// },
+	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		var prompt string
 		if len(args) > 0 {
@@ -74,7 +72,6 @@ func init() {
 
 	cobra.OnInitialize(viperConfig)
 
-	rootCmd.MarkFlagRequired("prompt")
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (use -v, -vv, -vvv for more)")
 	rootCmd.PersistentFlags().BoolVarP(&narrate, "narrate", "n", false, "Narrate the response using TTS and the default audio output")
