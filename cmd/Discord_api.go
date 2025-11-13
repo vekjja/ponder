@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/openai/openai-go/v3"
 	"github.com/spf13/viper"
-	"github.com/vekjja/goai"
 )
 
 var discord *discordgo.Session
@@ -135,30 +136,27 @@ func handleMessages(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func discordOpenAIResponse(s *discordgo.Session, m *discordgo.MessageCreate) {
 	discord.ChannelTyping(m.ChannelID)
-	openaiMessages := []goai.Message{{
-		Role:    "system",
-		Content: viper.GetString("discord_bot_systemMessage"),
-	}}
+	openaiMessages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(viper.GetString("discord_bot_systemMessage")),
+	}
 
 	discordMessages, err := discord.ChannelMessages(m.ChannelID, viper.GetInt("discord_message_context_count"), "", "", "")
 	catchErr(err)
 	discordMessages = discordReverseMessageOrder(discordMessages)
 
 	for _, message := range discordMessages {
-		role := "user"
 		if message.Author.ID == discord.State.User.ID {
-			role = "assistant"
+			openaiMessages = append(openaiMessages, openai.AssistantMessage(message.Content))
+		} else {
+			openaiMessages = append(openaiMessages, openai.UserMessage(message.Content))
 		}
-		newMessage := goai.Message{
-			Role:    role,
-			Content: message.Content,
-		}
-		openaiMessages = append(openaiMessages, newMessage)
 	}
 
 	// Send the messages to OpenAI
-	ai.User = "discord" + s.State.User.Username
-	oaiResponse, err := ai.ChatCompletion(openaiMessages)
+	oaiResponse, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
+		Messages: openaiMessages,
+		Model:    chatModel,
+	})
 	catchErr(err)
 	s.ChannelMessageSend(m.ChannelID, oaiResponse.Choices[0].Message.Content)
 }
@@ -173,7 +171,12 @@ func discordPonderImage(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		promptOption := commandData.Options[0]
 		prompt := promptOption.StringValue()
 		discordFollowUp("Using DALL-E 3 to generate an image: "+prompt, s, i)
-		res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), 1)
+		res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
+			Prompt: prompt,
+			Model:  openai.ImageModel(imageModel),
+			Size:   openai.ImageGenerateParamsSize(imageSize),
+			N:      openai.Int(1),
+		})
 		if err != nil {
 			log.Println("Error generating image:", err)
 			discordFollowUp("❌ Error generating image: "+err.Error(), s, i)

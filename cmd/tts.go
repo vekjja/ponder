@@ -6,10 +6,12 @@ Copyright © 2024 Kevin Jayne <kevin.jayne@icloud.com>
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -74,9 +76,23 @@ func ttsResponse(text string) (string, []byte) {
 }
 
 func tts(text string) []byte {
-	ai.Voice = voice
-	audioData, err := ai.TTS(text)
+	voiceToUse := voice
+	if voiceToUse == "" {
+		voiceToUse = ttsVoice
+	}
+
+	res, err := ai.Audio.Speech.New(context.Background(), openai.AudioSpeechNewParams{
+		Input: text,
+		Model: openai.AudioModel(ttsModel),
+		Voice: openai.AudioSpeechNewParamsVoice(voiceToUse),
+		Speed: openai.Float(ttsSpeed),
+	})
 	catchErr(err, "fatal")
+	defer res.Body.Close()
+
+	audioData, err := io.ReadAll(res.Body)
+	catchErr(err, "fatal")
+
 	if audioFile != "" {
 		file, err := os.Create(audioFile)
 		catchErr(err)

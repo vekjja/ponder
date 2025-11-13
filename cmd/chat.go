@@ -5,9 +5,11 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
-	"github.com/vekjja/goai"
 )
 
 func init() {
@@ -49,17 +51,16 @@ func chatResponse(prompt string) (string, []byte) {
 }
 
 func chatCompletion(prompt string) string {
-	ponderMessages = append(ponderMessages, goai.Message{
-		Role:    "user",
-		Content: prompt,
-	})
+	ponderMessages = append(ponderMessages, openai.UserMessage(prompt))
 
 	// Send the messages to OpenAI
-	res, err := ai.ChatCompletion(ponderMessages)
-	catchErr(err, "fatal")
-	ponderMessages = append(ponderMessages, goai.Message{
-		Role:    "assistant",
-		Content: res.Choices[0].Message.Content,
+	res, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
+		Messages: ponderMessages,
+		Model:    chatModel,
 	})
-	return res.Choices[0].Message.Content
+	catchErr(err, "fatal")
+
+	assistantMessage := res.Choices[0].Message.Content
+	ponderMessages = append(ponderMessages, openai.AssistantMessage(assistantMessage))
+	return assistantMessage
 }
