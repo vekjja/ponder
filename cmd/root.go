@@ -28,37 +28,22 @@ var prompt,
 	openaiAPIKey,
 	discordAPIKey string
 
-// Configuration variables for OpenAI settings
-var (
-	chatModel        string
-	imageModel       string
-	imageSize        string
-	ttsModel         string
-	ttsVoice         string
-	ttsSpeed         float64
-	maxTokens        int
-	temperature      float64
-	topP             float64
-	frequencyPenalty float64
-	presencePenalty  float64
-	openaiUser       string
-)
+// Configuration variable for OpenAI user ID
+var openaiUser string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "ponder",
+	Use:   "ponder [prompt]",
 	Short: "Ponder OpenAI Chat Bot " + appVersion,
 	Long: `
 	Ponder
-	GitHub: https://github.com/seemywingz/ponder
+	GitHub: https://github.com/vekjja/ponder
 	App Version: ` + appVersion + `
 
   Ponder uses OpenAI's API to generate text responses to user input.
   Or whatever else you can think of. 🤔
 	`,
-	// Args: func(cmd *cobra.Command, args []string) error {
-	// 	return checkArgs(args)
-	// },
+	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		var prompt string
 		if len(args) > 0 {
@@ -87,7 +72,6 @@ func init() {
 
 	cobra.OnInitialize(viperConfig)
 
-	rootCmd.MarkFlagRequired("prompt")
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (use -v, -vv, -vvv for more)")
 	rootCmd.PersistentFlags().BoolVarP(&narrate, "narrate", "n", false, "Narrate the response using TTS and the default audio output")
@@ -158,18 +142,7 @@ func viperConfig() {
 		openai.DeveloperMessage(systemMessage),
 	}
 
-	// Load configuration into global variables
-	chatModel = viper.GetString("openAI_chat_model")
-	imageModel = viper.GetString("openAI_image_model")
-	imageSize = viper.GetString("openAI_image_size")
-	ttsModel = viper.GetString("openAI_tts_model")
-	ttsVoice = viper.GetString("openAI_tts_voice")
-	ttsSpeed = viper.GetFloat64("openAI_tts_speed")
-	maxTokens = viper.GetInt("openAI_maxTokens")
-	temperature = viper.GetFloat64("openAI_temperature")
-	topP = viper.GetFloat64("openAI_topP")
-	frequencyPenalty = viper.GetFloat64("openAI_frequencyPenalty")
-	presencePenalty = viper.GetFloat64("openAI_presencePenalty")
+	// Initialize OpenAI user ID
 	openaiUser = "ponder" + HashAPIKey(openaiAPIKey)
 
 	opts := []option.RequestOption{

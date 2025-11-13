@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var audioFile,
@@ -78,14 +79,14 @@ func ttsResponse(text string) (string, []byte) {
 func tts(text string) []byte {
 	voiceToUse := voice
 	if voiceToUse == "" {
-		voiceToUse = ttsVoice
+		voiceToUse = viper.GetString("openAI_tts_voice")
 	}
 
 	res, err := ai.Audio.Speech.New(context.Background(), openai.AudioSpeechNewParams{
 		Input: text,
-		Model: openai.AudioModel(ttsModel),
+		Model: openai.AudioModel(viper.GetString("openAI_tts_model")),
 		Voice: openai.AudioSpeechNewParamsVoice(voiceToUse),
-		Speed: openai.Float(ttsSpeed),
+		Speed: openai.Float(viper.GetFloat64("openAI_tts_speed")),
 	})
 	catchErr(err, "fatal")
 	defer res.Body.Close()

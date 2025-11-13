@@ -174,7 +174,7 @@ func adventureChat(prompt string) string {
 
 	oaiResponse, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
 		Messages: adventureMessages,
-		Model:    chatModel,
+		Model:    viper.GetString("openAI_chat_model"),
 	})
 	catchErr(err)
 
@@ -187,8 +187,8 @@ func adventureImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
 	res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
 		Prompt: prompt,
-		Model:  openai.ImageModel(imageModel),
-		Size:   openai.ImageGenerateParamsSize(imageSize),
+		Model:  openai.ImageModel(viper.GetString("openAI_image_model")),
+		Size:   openai.ImageGenerateParamsSize(viper.GetString("openAI_image_size")),
 		N:      openai.Int(1),
 	})
 	if err != nil {

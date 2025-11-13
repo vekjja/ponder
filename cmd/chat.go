@@ -10,6 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -22,10 +23,8 @@ var chatCmd = &cobra.Command{
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		var text string
 		if len(args) > 0 {
-			text = args[0]
-			prompt = text
+			prompt = args[0]
 		}
 		p := tea.NewProgram(
 			initialChatHistoryModel(),
@@ -56,7 +55,7 @@ func chatCompletion(prompt string) string {
 	// Send the messages to OpenAI
 	res, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
 		Messages: ponderMessages,
-		Model:    chatModel,
+		Model:    viper.GetString("openAI_chat_model"),
 	})
 	catchErr(err, "fatal")
 
