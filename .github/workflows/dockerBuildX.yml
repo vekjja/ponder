@@ -3,7 +3,6 @@ name: Docker BuildX
 on:
   push:
     branches:
-      - develop
       - main
     tags:
       - "**"
