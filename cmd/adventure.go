@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vekjja/goai"
@@ -47,6 +48,7 @@ Throw a few twists in the story but keep with the users original intent.
 
 var generateImages = false
 var adventureMessages = []goai.Message{}
+var adventureStage int // 0 = name, 1 = description, 2 = playing
 
 // adventureCmd represents the adventure command
 var adventureCmd = &cobra.Command{
@@ -54,13 +56,116 @@ var adventureCmd = &cobra.Command{
 	Short: "lets you dive into a captivating text adventure",
 	Long:  `immerses you in a dynamic virtual story. Through text prompts, you'll make choices that lead your character through a series of challenges and decisions. Each choice you make affects the storyline's development, creating a unique and interactive narrative experience. Get ready to explore, solve puzzles, and shape the adventure's outcome entirely through your imagination and decisions.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		startAdventure()
+		adventureStage = 0
+		player = Character{}
+		adventureMessages = []goai.Message{}
+
+		p := tea.NewProgram(
+			newChatHistoryModel(ChatHistoryConfig{
+				Title:          "⚔️  Ponder Adventure ⚔️",
+				Placeholder:    "Enter your name...",
+				InitialMessage: "Welcome adventurer! Please type your name.",
+				UserLabel:      "Unknown Adventurer: ",
+				AssistantLabel: "Narrator:",
+				UserColor:      "86",
+				AssistantColor: "212",
+				CustomHandler:  adventureHandler,
+			}),
+			tea.WithAltScreen(),
+			tea.WithMouseCellMotion(),
+		)
+		if _, err := p.Run(); err != nil {
+			catchErr(err, "fatal")
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(adventureCmd)
 	adventureCmd.Flags().BoolVarP(&generateImages, "images", "i", false, "Generate Images")
+}
+
+func adventureHandler(m *chatHistoryModel, userInput string) tea.Cmd {
+	switch adventureStage {
+	case 0: // Name input
+		player = Character{
+			Name:        userInput,
+			Description: "",
+			HP:          100,
+			MP:          100,
+			Level:       1,
+			Strength:    1,
+			Defense:     1,
+			Dexterity:   1,
+			Intellect:   1,
+			Hunger:      0,
+		}
+		adventureStage = 1
+		m.textarea.Placeholder = "Describe your character..."
+
+		// Update the user label to use the player's name for future messages
+		m.config.UserLabel = "🗡️  " + player.Name + " 🛡️: "
+
+		// Update the name entry message to avoid duplication (label will be prepended automatically)
+		if len(m.messages) > 0 && m.messages[len(m.messages)-1].role == "user" {
+			m.messages[len(m.messages)-1].content = ""
+		}
+
+		// Add narrator response immediately (no API call needed)
+		welcomeMsg := "Welcome " + player.Name + "! Now, please describe your character. Be as detailed as you like.\nYou can include their appearance, personality, background, skills, or anything else that defines them."
+		return func() tea.Msg {
+			return responseMsg{content: welcomeMsg, audio: nil, err: nil}
+		}
+
+	case 1: // Description input
+		player.Description = userInput
+		adventureStage = 2
+		m.textarea.Placeholder = "What do you do?..."
+
+		// Initialize adventure with character
+		return func() tea.Msg {
+			playerString, err := json.Marshal(player)
+			if err != nil {
+				return responseMsg{err: err}
+			}
+
+			adventureSystemMessage = adventureSystemMessage + "\n YOUR STARTING CHARACTER STATS:\n" + string(playerString)
+			adventureMessages = []goai.Message{{
+				Role:    "system",
+				Content: adventureSystemMessage,
+			}}
+
+			response, audio := adventureResponse("My name is " + player.Name + " start adventure")
+			return responseMsg{content: response, audio: audio, err: nil}
+		}
+
+	case 2: // Playing the adventure
+		return func() tea.Msg {
+			// Manage message history to prevent it from getting too long
+			if totalMessageCharacters() > 4096 {
+				adventureMessages = append(adventureMessages[:2], adventureMessages[3:]...)
+			}
+
+			response, audio := adventureResponse(userInput)
+			return responseMsg{content: response, audio: audio, err: nil}
+		}
+	}
+
+	return nil
+}
+
+func adventureResponse(prompt string) (string, []byte) {
+	var audio []byte
+	spinner, _ = ponderSpinner.Start()
+	response := adventureChat(prompt)
+	if narrate {
+		audio = tts(response)
+	}
+	spinner.Stop()
+	if generateImages {
+		go adventureImage(response)
+	}
+	return response, audio
 }
 
 func adventureChat(prompt string) string {
@@ -121,92 +226,10 @@ func adventureImage(prompt string) {
 	}
 }
 
-func narratorSay(text string) {
-	fmt.Println()
-	if narrate {
-		audioData := tts(text)
-		spinner.Stop()
-		fmt.Println("🗣️  Narrator: ", text)
-		if audioData != nil {
-			playAudio(audioData)
-		}
-	} else {
-
-		fmt.Println("🗣️  Narrator: ", text)
-		spinner.Stop()
-	}
-}
-
-func getPlayerInput(player *Character) string {
-	fmt.Print("\n🗡️  " + player.Name + "🛡️ : ")
-	playerInput, err := getUserInput("What do you do?")
-	catchErr(err)
-	return playerInput
-}
-
 func totalMessageCharacters() int {
 	totalCharacters := 0
 	for _, message := range adventureMessages {
 		totalCharacters += len(message.Content)
 	}
 	return totalCharacters
-}
-
-func startAdventure() {
-
-	spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
-	narratorSay("Please type your name.")
-	fmt.Print("🗡️  Your Name: ")
-	playerName, err := getUserInput("Enter your name...")
-	catchErr(err)
-
-	player = Character{
-		Name:        playerName,
-		Description: "",
-		HP:          100,
-		MP:          100,
-		Level:       1,
-		Strength:    1,
-		Defense:     1,
-		Dexterity:   1,
-		Intellect:   1,
-		Hunger:      0,
-	}
-
-	// spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
-	narratorSay("Welcome " + player.Name + ", to the world of adventure! Describe your character, be as detailed as you like.")
-	playerDescription := getPlayerInput(&player)
-	player.Description = playerDescription
-
-	spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
-	playerString, err := json.Marshal(player)
-	catchErr(err)
-
-	adventureSystemMessage = adventureSystemMessage + "\n YOUR STARTING CHARACTER STATS:\n" + string(playerString)
-
-	adventureMessages = []goai.Message{{
-		Role:    "system",
-		Content: adventureSystemMessage,
-	}}
-
-	startMessage := adventureChat("My name is " + player.Name + " start adventure")
-	narratorSay(startMessage)
-	if generateImages {
-		adventureImage(startMessage)
-	}
-
-	for {
-
-		if totalMessageCharacters() > 4096 {
-			adventureMessages = append(adventureMessages[:2], adventureMessages[3:]...)
-		}
-
-		playerInput := getPlayerInput(&player)
-		spinner, _ = ponderSpinner.WithSequence(moonSequence...).Start()
-		adventureResponse := adventureChat(playerInput)
-		narratorSay(adventureResponse)
-		if generateImages {
-			adventureImage(adventureResponse)
-		}
-	}
 }

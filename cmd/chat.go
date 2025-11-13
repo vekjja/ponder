@@ -6,7 +6,6 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,10 +22,12 @@ var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
-	// Args: func(cmd *cobra.Command, args []string) error {
-	// 	return checkArgs(args)
-	// },
 	Run: func(cmd *cobra.Command, args []string) {
+		var text string
+		if len(args) > 0 {
+			text = args[0]
+			prompt = text
+		}
 		p := tea.NewProgram(
 			initialChatHistoryModel(),
 			tea.WithAltScreen(),
@@ -113,39 +114,39 @@ func (m simpleInputModel) View() string {
 	)
 }
 
-func getUserInput(placeholder string) (string, error) {
-	// Create and configure the textarea
-	ti := textarea.New()
-	ti.Placeholder = placeholder
-	ti.Focus()
-	ti.CharLimit = 10000
-	ti.SetWidth(80)
-	ti.SetHeight(3)
-	ti.ShowLineNumbers = false
+// func getUserInput(placeholder string) (string, error) {
+// 	// Create and configure the textarea
+// 	ti := textarea.New()
+// 	ti.Placeholder = placeholder
+// 	ti.Focus()
+// 	ti.CharLimit = 10000
+// 	ti.SetWidth(80)
+// 	ti.SetHeight(3)
+// 	ti.ShowLineNumbers = false
 
-	// Create the model
-	m := simpleInputModel{
-		textarea: ti,
-		err:      nil,
-	}
+// 	// Create the model
+// 	m := simpleInputModel{
+// 		textarea: ti,
+// 		err:      nil,
+// 	}
 
-	// Run the program
-	p := tea.NewProgram(m)
-	finalModel, err := p.Run()
-	if err != nil {
-		trace()
-		return "", fmt.Errorf("error running editor: %w", err)
-	}
+// 	// Run the program
+// 	p := tea.NewProgram(m)
+// 	finalModel, err := p.Run()
+// 	if err != nil {
+// 		trace()
+// 		return "", fmt.Errorf("error running editor: %w", err)
+// 	}
 
-	// Get the final text
-	if fm, ok := finalModel.(simpleInputModel); ok {
-		result := strings.TrimSpace(fm.textarea.Value())
-		if verbose > 0 {
-			trace()
-			fmt.Println(result)
-		}
-		return result, nil
-	}
+// 	// Get the final text
+// 	if fm, ok := finalModel.(simpleInputModel); ok {
+// 		result := strings.TrimSpace(fm.textarea.Value())
+// 		if verbose > 0 {
+// 			trace()
+// 			fmt.Println(result)
+// 		}
+// 		return result, nil
+// 	}
 
-	return "", fmt.Errorf("unexpected model type")
-}
+// 	return "", fmt.Errorf("unexpected model type")
+// }

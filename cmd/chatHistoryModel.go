@@ -32,6 +32,19 @@ type responseMsg struct {
 	err     error
 }
 
+// ChatHistoryConfig allows customization of the chat history model
+type ChatHistoryConfig struct {
+	Title           string
+	Placeholder     string
+	InitialMessage  string
+	UserLabel       string
+	AssistantLabel  string
+	UserColor       string
+	AssistantColor  string
+	ResponseHandler func(string) (string, []byte)
+	CustomHandler   func(*chatHistoryModel, string) tea.Cmd // For multi-stage interactions
+}
+
 type chatHistoryModel struct {
 	viewport viewport.Model
 	textarea textarea.Model
@@ -41,16 +54,27 @@ type chatHistoryModel struct {
 	}
 	ready   bool
 	waiting bool
+	config  ChatHistoryConfig
 }
 
-func initialChatHistoryModel() chatHistoryModel {
+func newChatHistoryModel(config ChatHistoryConfig) chatHistoryModel {
 	ta := textarea.New()
-	ta.Placeholder = "Enter your message here..."
+	ta.Placeholder = config.Placeholder
+	if ta.Placeholder == "" {
+		ta.Placeholder = "Enter your message here..."
+	}
 	ta.Focus()
 	ta.CharLimit = charLimit
 	ta.ShowLineNumbers = false
 
-	m := chatHistoryModel{textarea: ta}
+	m := chatHistoryModel{
+		textarea: ta,
+		config:   config,
+	}
+
+	if config.InitialMessage != "" {
+		m.messages = append(m.messages, struct{ role, content string }{"assistant", config.InitialMessage})
+	}
 
 	if prompt != "" {
 		m.messages = append(m.messages, struct{ role, content string }{"user", prompt})
@@ -60,10 +84,22 @@ func initialChatHistoryModel() chatHistoryModel {
 	return m
 }
 
+func initialChatHistoryModel() chatHistoryModel {
+	return newChatHistoryModel(ChatHistoryConfig{
+		Title:           "💭 Ponder Chat",
+		Placeholder:     "Enter your message here...",
+		UserLabel:       "You: ",
+		AssistantLabel:  "Ponder:",
+		UserColor:       userColor,
+		AssistantColor:  assistantColor,
+		ResponseHandler: chatResponse,
+	})
+}
+
 func (m chatHistoryModel) Init() tea.Cmd {
 	if m.waiting {
 		return tea.Batch(textarea.Blink, func() tea.Msg {
-			response, audio := chatResponse(m.messages[0].content)
+			response, audio := m.config.ResponseHandler(m.messages[0].content)
 			return responseMsg{content: response, audio: audio}
 		})
 	}
@@ -123,8 +159,14 @@ func (m chatHistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.waiting = true
 				m.viewport.SetContent(m.renderMessages())
 				m.viewport.GotoBottom()
+
+				// Use custom handler if provided, otherwise use default response handler
+				if m.config.CustomHandler != nil {
+					return m, m.config.CustomHandler(&m, userMsg)
+				}
+
 				return m, func() tea.Msg {
-					response, audio := chatResponse(userMsg)
+					response, audio := m.config.ResponseHandler(userMsg)
 					return responseMsg{response, audio, nil}
 				}
 			}
@@ -151,10 +193,14 @@ func (m chatHistoryModel) View() string {
 		help = "⏳ Waiting... | Ctrl+C quit"
 	}
 
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(titleColor)).Render("💭 Ponder Chat")
+	title := m.config.Title
+	if title == "" {
+		title = "💭 Chat"
+	}
+	titleRendered := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(titleColor)).Render(title)
 	helpLine := lipgloss.NewStyle().Foreground(lipgloss.Color(helpColor)).Italic(true).Render(help)
 
-	return fmt.Sprintf("%s\n%s\n%s\n%s", title, m.viewport.View(), m.textarea.View(), helpLine)
+	return fmt.Sprintf("%s\n%s\n%s\n%s", titleRendered, m.viewport.View(), m.textarea.View(), helpLine)
 }
 
 func (m chatHistoryModel) renderMessages() string {
@@ -169,16 +215,33 @@ func (m chatHistoryModel) renderMessages() string {
 	}
 	wrap := lipgloss.NewStyle().Width(w)
 
+	userColorToUse := m.config.UserColor
+	if userColorToUse == "" {
+		userColorToUse = userColor
+	}
+	assistantColorToUse := m.config.AssistantColor
+	if assistantColorToUse == "" {
+		assistantColorToUse = assistantColor
+	}
+
 	for i, msg := range m.messages {
 		if i > 0 {
 			b.WriteString("\n")
 		}
 		switch msg.role {
 		case "user":
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(userColor)).Bold(true).Render("You: "))
+			label := m.config.UserLabel
+			if label == "" {
+				label = "You: "
+			}
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(userColorToUse)).Bold(true).Render(label))
 			b.WriteString(wrap.Render(msg.content))
 		case "assistant":
-			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(assistantColor)).Bold(true).Render("Ponder:") + "\n")
+			label := m.config.AssistantLabel
+			if label == "" {
+				label = "Assistant:"
+			}
+			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(assistantColorToUse)).Bold(true).Render(label) + "\n")
 			b.WriteString(wrap.Render(syntaxHighlightString(msg.content)))
 		case "system":
 			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(systemColor)).Italic(true).Render(wrap.Render(msg.content)))
