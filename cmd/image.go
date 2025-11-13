@@ -5,6 +5,7 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -46,7 +48,12 @@ func init() {
 
 func createImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
-	res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), n)
+	res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
+		Prompt: prompt,
+		Model:  openai.ImageModel(imageModel),
+		Size:   openai.ImageGenerateParamsSize(imageSize),
+		N:      openai.Int(int64(n)),
+	})
 
 	if err != nil {
 		fmt.Println("❌ Error generating image:", err)

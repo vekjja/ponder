@@ -6,18 +6,17 @@ Copyright © 2023 Kevin Jayne <kevin.jayne@icloud.com>
 
 import (
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vekjja/goai"
 )
 
-var ponderMessages = []goai.Message{}
+var ponderMessages []openai.ChatCompletionMessageParamUnion
 var appVersion = "v0.4.3"
-var ai *goai.Client
+var ai openai.Client
 
 var verbose int
 
@@ -28,6 +27,22 @@ var prompt,
 	configFile,
 	openaiAPIKey,
 	discordAPIKey string
+
+// Configuration variables for OpenAI settings
+var (
+	chatModel        string
+	imageModel       string
+	imageSize        string
+	ttsModel         string
+	ttsVoice         string
+	ttsSpeed         float64
+	maxTokens        int
+	temperature      float64
+	topP             float64
+	frequencyPenalty float64
+	presencePenalty  float64
+	openaiUser       string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -52,19 +67,6 @@ var rootCmd = &cobra.Command{
 		chatCmd.Run(cmd, []string{prompt})
 	},
 }
-
-// func checkArgs(args []string) error {
-// 	if convo && len(args) == 0 {
-// 		// When --convo is used, no args are required
-// 		return nil
-// 	}
-// 	// Otherwise, exactly one arg must be provided
-// 	if len(args) != 1 {
-// 		return fmt.Errorf("Prompt Required")
-// 	}
-// 	prompt = args[0]
-// 	return nil
-// }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -151,30 +153,33 @@ func viperConfig() {
 		}
 	}
 
-	ponderMessages = []goai.Message{{
-		Role:    "developer",
-		Content: viper.GetString("openAI_chat_systemMessage"),
-	}}
-
-	ai = &goai.Client{
-		Endpoint:         viper.GetString("openAI_endpoint"),
-		API_KEY:          openaiAPIKey,
-		Verbose:          verbose,
-		ImageSize:        viper.GetString("openAI_image_size"),
-		User:             "ponder" + goai.HashAPIKey(openaiAPIKey),
-		TopP:             viper.GetFloat64("openAI_topP"),
-		ChatModel:        viper.GetString("openAI_chat_model"),
-		ImageModel:       viper.GetString("openAI_image_model"),
-		TTSModel:         viper.GetString("openAI_tts_model"),
-		Voice:            viper.GetString("openAI_tts_voice"),
-		Speed:            viper.GetFloat64("openAI_tts_speed"),
-		ResponseFormat:   viper.GetString("openAI_tts_responseFormat"),
-		MaxTokens:        viper.GetInt("openAI_maxTokens"),
-		Temperature:      viper.GetFloat64("openAI_temperature"),
-		FrequencyPenalty: viper.GetFloat64("openAI_frequencyPenalty"),
-		PresencePenalty:  viper.GetFloat64("openAI_presencePenalty"),
-		HTTPClient: &http.Client{
-			Timeout: 60 * time.Second,
-		},
+	systemMessage := viper.GetString("openAI_chat_systemMessage")
+	ponderMessages = []openai.ChatCompletionMessageParamUnion{
+		openai.DeveloperMessage(systemMessage),
 	}
+
+	// Load configuration into global variables
+	chatModel = viper.GetString("openAI_chat_model")
+	imageModel = viper.GetString("openAI_image_model")
+	imageSize = viper.GetString("openAI_image_size")
+	ttsModel = viper.GetString("openAI_tts_model")
+	ttsVoice = viper.GetString("openAI_tts_voice")
+	ttsSpeed = viper.GetFloat64("openAI_tts_speed")
+	maxTokens = viper.GetInt("openAI_maxTokens")
+	temperature = viper.GetFloat64("openAI_temperature")
+	topP = viper.GetFloat64("openAI_topP")
+	frequencyPenalty = viper.GetFloat64("openAI_frequencyPenalty")
+	presencePenalty = viper.GetFloat64("openAI_presencePenalty")
+	openaiUser = "ponder" + HashAPIKey(openaiAPIKey)
+
+	opts := []option.RequestOption{
+		option.WithAPIKey(openaiAPIKey),
+	}
+
+	baseURL := viper.GetString("openAI_endpoint")
+	if baseURL != "" && baseURL != "https://api.openai.com/v1/" {
+		opts = append(opts, option.WithBaseURL(baseURL))
+	}
+
+	ai = openai.NewClient(opts...)
 }

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -206,4 +208,10 @@ func stopAudio() {
 		audioCmd.Process.Kill()
 		audioCmd = nil
 	}
+}
+
+// HashAPIKey returns a SHA256 hash of the API key
+func HashAPIKey(apiKey string) string {
+	hash := sha256.Sum256([]byte(apiKey))
+	return hex.EncodeToString(hash[:8])
 }

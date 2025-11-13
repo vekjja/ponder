@@ -5,6 +5,7 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,9 +17,9 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/openai/openai-go/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vekjja/goai"
 )
 
 // Character represents a player in the adventure
@@ -47,7 +48,7 @@ Throw a few twists in the story but keep with the users original intent.
 `
 
 var generateImages = false
-var adventureMessages = []goai.Message{}
+var adventureMessages []openai.ChatCompletionMessageParamUnion
 var adventureStage int // 0 = name, 1 = description, 2 = playing
 
 // adventureCmd represents the adventure command
@@ -58,7 +59,7 @@ var adventureCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		adventureStage = 0
 		player = Character{}
-		adventureMessages = []goai.Message{}
+		adventureMessages = []openai.ChatCompletionMessageParamUnion{}
 
 		p := tea.NewProgram(
 			newChatHistoryModel(ChatHistoryConfig{
@@ -130,10 +131,9 @@ func adventureHandler(m *chatHistoryModel, userInput string) tea.Cmd {
 			}
 
 			adventureSystemMessage = adventureSystemMessage + "\n YOUR STARTING CHARACTER STATS:\n" + string(playerString)
-			adventureMessages = []goai.Message{{
-				Role:    "system",
-				Content: adventureSystemMessage,
-			}}
+			adventureMessages = []openai.ChatCompletionMessageParamUnion{
+				openai.SystemMessage(adventureSystemMessage),
+			}
 
 			response, audio := adventureResponse("My name is " + player.Name + " start adventure")
 			return responseMsg{content: response, audio: audio, err: nil}
@@ -142,8 +142,9 @@ func adventureHandler(m *chatHistoryModel, userInput string) tea.Cmd {
 	case 2: // Playing the adventure
 		return func() tea.Msg {
 			// Manage message history to prevent it from getting too long
-			if totalMessageCharacters() > 4096 {
-				adventureMessages = append(adventureMessages[:2], adventureMessages[3:]...)
+			// Keep system message and last 20 messages
+			if len(adventureMessages) > 21 {
+				adventureMessages = append(adventureMessages[:1], adventureMessages[len(adventureMessages)-20:]...)
 			}
 
 			response, audio := adventureResponse(userInput)
@@ -169,22 +170,27 @@ func adventureResponse(prompt string) (string, []byte) {
 }
 
 func adventureChat(prompt string) string {
-	adventureMessages = append(adventureMessages, goai.Message{
-		Role:    "user",
-		Content: prompt,
+	adventureMessages = append(adventureMessages, openai.UserMessage(prompt))
+
+	oaiResponse, err := ai.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
+		Messages: adventureMessages,
+		Model:    chatModel,
 	})
-	oaiResponse, err := ai.ChatCompletion(adventureMessages)
 	catchErr(err)
-	adventureMessages = append(adventureMessages, goai.Message{
-		Role:    "assistant",
-		Content: oaiResponse.Choices[0].Message.Content,
-	})
-	return oaiResponse.Choices[0].Message.Content
+
+	assistantMessage := oaiResponse.Choices[0].Message.Content
+	adventureMessages = append(adventureMessages, openai.AssistantMessage(assistantMessage))
+	return assistantMessage
 }
 
 func adventureImage(prompt string) {
 	fmt.Println("🖼  Creating Image...")
-	res, err := ai.ImageGen(prompt, viper.GetString("openAI_image_model"), viper.GetString("openAI_image_size"), 1)
+	res, err := ai.Images.Generate(context.Background(), openai.ImageGenerateParams{
+		Prompt: prompt,
+		Model:  openai.ImageModel(imageModel),
+		Size:   openai.ImageGenerateParamsSize(imageSize),
+		N:      openai.Int(1),
+	})
 	if err != nil {
 		fmt.Println("❌ Error generating image:", err)
 		return
@@ -224,12 +230,4 @@ func adventureImage(prompt string) {
 		trace()
 		fmt.Println(err)
 	}
-}
-
-func totalMessageCharacters() int {
-	totalCharacters := 0
-	for _, message := range adventureMessages {
-		totalCharacters += len(message.Content)
-	}
-	return totalCharacters
 }
