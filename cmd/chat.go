@@ -5,10 +5,6 @@ Copyright © 2023 Kevin.Jayne@iCloud.com
 */
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/vekjja/goai"
@@ -23,10 +19,12 @@ var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
-	// Args: func(cmd *cobra.Command, args []string) error {
-	// 	return checkArgs(args)
-	// },
 	Run: func(cmd *cobra.Command, args []string) {
+		var text string
+		if len(args) > 0 {
+			text = args[0]
+			prompt = text
+		}
 		p := tea.NewProgram(
 			initialChatHistoryModel(),
 			tea.WithAltScreen(),
@@ -64,88 +62,4 @@ func chatCompletion(prompt string) string {
 		Content: res.Choices[0].Message.Content,
 	})
 	return res.Choices[0].Message.Content
-}
-
-// simpleInputModel is a simple editor for single inputs
-type simpleInputModel struct {
-	textarea textarea.Model
-	err      error
-}
-
-func (m simpleInputModel) Init() tea.Cmd {
-	return textarea.Blink
-}
-
-func (m simpleInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
-			stopAudio()
-			return m, tea.Quit
-		case tea.KeyCtrlD:
-			// Submit
-			return m, tea.Quit
-		default:
-			if !m.textarea.Focused() {
-				cmd = m.textarea.Focus()
-				cmds = append(cmds, cmd)
-			}
-		}
-
-	case error:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textarea, cmd = m.textarea.Update(msg)
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
-}
-
-func (m simpleInputModel) View() string {
-	return fmt.Sprintf(
-		"%s\n",
-		m.textarea.View(),
-	)
-}
-
-func getUserInput(placeholder string) (string, error) {
-	// Create and configure the textarea
-	ti := textarea.New()
-	ti.Placeholder = placeholder
-	ti.Focus()
-	ti.CharLimit = 10000
-	ti.SetWidth(80)
-	ti.SetHeight(3)
-	ti.ShowLineNumbers = false
-
-	// Create the model
-	m := simpleInputModel{
-		textarea: ti,
-		err:      nil,
-	}
-
-	// Run the program
-	p := tea.NewProgram(m)
-	finalModel, err := p.Run()
-	if err != nil {
-		trace()
-		return "", fmt.Errorf("error running editor: %w", err)
-	}
-
-	// Get the final text
-	if fm, ok := finalModel.(simpleInputModel); ok {
-		result := strings.TrimSpace(fm.textarea.Value())
-		if verbose > 0 {
-			trace()
-			fmt.Println(result)
-		}
-		return result, nil
-	}
-
-	return "", fmt.Errorf("unexpected model type")
 }
