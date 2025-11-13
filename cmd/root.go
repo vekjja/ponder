@@ -41,9 +41,9 @@ var rootCmd = &cobra.Command{
   Ponder uses OpenAI's API to generate text responses to user input.
   Or whatever else you can think of. 🤔
 	`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		return checkArgs(args)
-	},
+	// Args: func(cmd *cobra.Command, args []string) error {
+	// 	return checkArgs(args)
+	// },
 	Run: func(cmd *cobra.Command, args []string) {
 		var prompt string
 		if len(args) > 0 {
@@ -53,18 +53,18 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func checkArgs(args []string) error {
-	if convo && len(args) == 0 {
-		// When --convo is used, no args are required
-		return nil
-	}
-	// Otherwise, exactly one arg must be provided
-	if len(args) != 1 {
-		return fmt.Errorf("Prompt Required")
-	}
-	prompt = args[0]
-	return nil
-}
+// func checkArgs(args []string) error {
+// 	if convo && len(args) == 0 {
+// 		// When --convo is used, no args are required
+// 		return nil
+// 	}
+// 	// Otherwise, exactly one arg must be provided
+// 	if len(args) != 1 {
+// 		return fmt.Errorf("Prompt Required")
+// 	}
+// 	prompt = args[0]
+// 	return nil
+// }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -87,7 +87,6 @@ func init() {
 
 	rootCmd.MarkFlagRequired("prompt")
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file")
-	rootCmd.PersistentFlags().BoolVarP(&convo, "convo", "c", false, "Conversational Style chat")
 	rootCmd.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output (use -v, -vv, -vvv for more)")
 	rootCmd.PersistentFlags().BoolVarP(&narrate, "narrate", "n", false, "Narrate the response using TTS and the default audio output")
 	rootCmd.PersistentFlags().StringVar(&voice, "voice", "onyx", "Voice to use: alloy, ash, coral, echo, fable, onyx, nova, sage and shimmer")
@@ -130,7 +129,7 @@ func viperConfig() {
 	viper.SetDefault("openAI_frequencyPenalty", "0.0")
 	viper.SetDefault("openAI_presencePenalty", "0.6")
 	viper.SetDefault("openAI_temperature", "0")
-	viper.SetDefault("openAI_maxTokens", "999")
+	viper.SetDefault("openAI_maxTokens", "4096")
 
 	viper.SetDefault("radio_notificationSound", "~/.ponder/audio/notify.mp3")
 

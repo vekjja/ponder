@@ -22,9 +22,9 @@ var ttsCmd = &cobra.Command{
 	Long: `OpenAI Text to Speech API - TTS
 	You can use the TTS API to generate audio from text.
 	`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		return checkArgs(args)
-	},
+	// Args: func(cmd *cobra.Command, args []string) error {
+	// 	return checkArgs(args)
+	// },
 	Run: func(cmd *cobra.Command, args []string) {
 		tts(prompt)
 		audio := tts(prompt)

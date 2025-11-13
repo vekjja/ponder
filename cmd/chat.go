@@ -25,26 +25,17 @@ var chatCmd = &cobra.Command{
 	Use:   "chat",
 	Short: "Open ended chat with OpenAI",
 	Long:  ``,
-	Args: func(cmd *cobra.Command, args []string) error {
-		return checkArgs(args)
-	},
+	// Args: func(cmd *cobra.Command, args []string) error {
+	// 	return checkArgs(args)
+	// },
 	Run: func(cmd *cobra.Command, args []string) {
-		if convo {
-			// Use the interactive TUI for conversation mode
-			p := tea.NewProgram(
-				initialChatHistoryModel(),
-				tea.WithAltScreen(),
-			)
-			if _, err := p.Run(); err != nil {
-				catchErr(err, "fatal")
-			}
-		} else {
-			// Single response mode (no TUI)
-			response, audio := chatResponse(prompt)
-			syntaxHighlight(response)
-			if narrate {
-				playAudio(audio)
-			}
+		p := tea.NewProgram(
+			initialChatHistoryModel(),
+			tea.WithAltScreen(),
+			tea.WithMouseCellMotion(),
+		)
+		if _, err := p.Run(); err != nil {
+			catchErr(err, "fatal")
 		}
 	},
 }
@@ -112,7 +103,7 @@ type chatHistoryModel struct {
 
 func initialChatHistoryModel() chatHistoryModel {
 	ta := textarea.New()
-	ta.Placeholder = "Type your message here..."
+	ta.Placeholder = "Enter your message here..."
 	ta.Focus()
 	ta.CharLimit = 10000
 	ta.ShowLineNumbers = false
@@ -153,18 +144,18 @@ func (m chatHistoryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.ready {
 			// Initialize viewport with proper dimensions
 			headerHeight := 2
-			footerHeight := 6 // Space for textarea + instructions
+			footerHeight := 7 // Space for textarea + instructions
 			m.viewport = viewport.New(msg.Width, msg.Height-headerHeight-footerHeight)
 			m.viewport.YPosition = headerHeight
 			m.ready = true
 
 			// Set textarea dimensions
 			m.textarea.SetWidth(msg.Width - 4)
-			m.textarea.SetHeight(3)
+			m.textarea.SetHeight(5)
 		} else {
 			m.viewport.Width = msg.Width
 			headerHeight := 2
-			footerHeight := 6
+			footerHeight := 7
 			m.viewport.Height = msg.Height - headerHeight - footerHeight
 			m.textarea.SetWidth(msg.Width - 4)
 		}
@@ -256,28 +247,35 @@ func (m chatHistoryModel) View() string {
 
 	instructions := systemStyle.Render("Ctrl+D to send | Ctrl+C to quit")
 	if m.waiting {
-		instructions = systemStyle.Render("⏳ Waiting for response... | Ctrl+C to quit")
+		instructions = systemStyle.Render("                | Ctrl+C to quit")
 	}
 
-	return header + m.viewport.View() + "\n\n" + m.textarea.View() + "\n" + instructions
+	return header + m.viewport.View() + "\n" + m.textarea.View() + "\n" + instructions
 }
 
 // renderMessages converts the message history to a formatted string
 func (m chatHistoryModel) renderMessages() string {
 	var b strings.Builder
 
+	// Create a style for word wrapping based on viewport width
+	wrapWidth := m.viewport.Width
+	if wrapWidth == 0 {
+		wrapWidth = 80 // Default width before viewport is initialized
+	}
+	wrapStyle := lipgloss.NewStyle().Width(wrapWidth)
+
 	for _, msg := range m.messages {
 		switch msg.role {
 		case "user":
 			b.WriteString(userStyle.Render("You: "))
-			b.WriteString(msg.content)
+			b.WriteString(wrapStyle.Render(msg.content))
 		case "assistant":
 			b.WriteString(assistantStyle.Render("Ponder: ") + "\n")
 			// Apply syntax highlighting to assistant messages
 			highlighted := syntaxHighlightString(msg.content)
-			b.WriteString(highlighted)
+			b.WriteString(wrapStyle.Render(highlighted))
 		case "system":
-			b.WriteString(systemStyle.Render(msg.content))
+			b.WriteString(wrapStyle.Render(systemStyle.Render(msg.content)))
 		}
 		b.WriteString("\n\n")
 	}
