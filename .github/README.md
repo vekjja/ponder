@@ -90,12 +90,15 @@ ponder "What is artificial intelligence?"
 ### Interactive Chat Mode
 Start a conversational session:
 ```bash
-ponder chat
-```
-
-Or use the root command:
-```bash
 ponder
+```
+Narrate the response using TTS and the default audio output:
+```bash
+ponder --narrate
+```
+Use a different voice:
+```bash
+ponder --voice nova
 ```
 
 ### Image Generation
@@ -124,9 +127,6 @@ Convert text to speech:
 ```bash
 # Interactive TTS mode
 ponder tts
-
-# Direct conversion with narration
-ponder "Tell me a story" --narrate
 
 # Save audio to file
 ponder tts --file output.mp3
