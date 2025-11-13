@@ -60,11 +60,13 @@ func syntaxHighlightString(message string) string {
 		formatter = formatters.Fallback
 	}
 
-	// Regex to find inline code and double-quoted text
+	// Regex to find inline code, double-quoted text, and bold markdown
 	backtickRegex := regexp.MustCompile("`([^`]*)`")
 	doubleQuoteRegex := regexp.MustCompile(`"([^"]*)"`)
+	boldRegex := regexp.MustCompile(`\*\*([^*]+)\*\*`)
 	cyan := "\033[36m"   // Cyan color ANSI escape code
 	yellow := "\033[33m" // Yellow color ANSI escape code
+	bold := "\033[1m"    // Bold ANSI escape code
 	reset := "\033[0m"   // Reset ANSI escape code
 
 	processLine := func(line string) string {
@@ -73,6 +75,10 @@ func syntaxHighlightString(message string) string {
 		})
 		line = doubleQuoteRegex.ReplaceAllStringFunc(line, func(match string) string {
 			return yellow + match + reset
+		})
+		line = boldRegex.ReplaceAllStringFunc(line, func(match string) string {
+			content := strings.Trim(strings.Trim(match, "*"), "*")
+			return bold + content + reset
 		})
 		return line
 	}
